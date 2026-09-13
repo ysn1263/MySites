@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統分析師 | 20餘年跨產業系統開發與分析一頁式履歷</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dark .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-50 glass-card border-b border-slate-200/80 dark:border-slate-800/80 transition-all">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo / Title -->
+                <a href="#hero" class="flex items-center gap-2 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
+                        SA
+                    </div>
+                    <span class="font-bold text-lg text-slate-900 dark:text-white tracking-tight">System Analyst Portfolio</span>
+                </a>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+                    <a href="#about" class="text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition-colors">簡介與背景</a>
+                    <a href="#experience" class="text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition-colors">職責與貢獻</a>
+                    <a href="#skills" class="text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition-colors">專業技能</a>
+                    <a href="#ai-learning" class="text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 animate-pulse"></i> AI 實務應用
+                    </a>
+                </nav>
+
+                <!-- Actions: Social, Music, Dark mode & Email button -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- AI365 Social Link Button -->
+                    <a href="https://ai365.fans/user.html?id=8ec34e74-54d8-4f4e-af27-4cb04db398b9" target="_blank" rel="noopener noreferrer" title="造訪 AI365 社群主頁" class="p-2.5 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-slate-700/60 transition-all flex items-center justify-center gap-1.5 group">
+                        <i class="fa-solid fa-globe text-base group-hover:rotate-12 transition-transform"></i>
+                        <span class="text-xs font-semibold hidden lg:inline">AI365</span>
+                    </a>
+
+                    <!-- Background Music Toggle Button -->
+                    <button id="musicToggle" title="背景音樂 開/關" class="p-2.5 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-300/60 dark:hover:bg-slate-700/60 transition-all flex items-center justify-center gap-1.5 group">
+                        <i id="musicIcon" class="fa-solid fa-music text-base text-slate-500 transition-transform"></i>
+                        <span id="musicText" class="text-xs font-semibold hidden sm:inline">音樂 Off</span>
+                    </button>
+
+                    <!-- Dark / Light Theme Toggle Button -->
+                    <button id="themeToggle" title="切換深淺模式" class="p-2.5 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-300/60 dark:hover:bg-slate-700/60 transition-all flex items-center justify-center">
+                        <i id="themeIcon" class="fa-solid fa-moon text-base"></i>
+                    </button>
+                    
+                    <a href="mailto:ysn1263@gmail.com" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 hover:from-brand-600 hover:to-accent-600 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-regular fa-envelope text-xs"></i> ysn1263@gmail.com
+                    </a>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer Navigation -->
+        <div id="mobileMenu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg px-4 pt-3 pb-6 space-y-3">
+            <a href="#about" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">簡介與背景</a>
+            <a href="#experience" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">職責與貢獻</a>
+            <a href="#skills" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">專業技能</a>
+            <a href="#ai-learning" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-amber-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800">AI 實務應用</a>
+            <a href="https://ai365.fans/user.html?id=8ec34e74-54d8-4f4e-af27-4cb04db398b9" target="_blank" rel="noopener noreferrer" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-brand-600 dark:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-globe"></i> AI365 社群主頁
+            </a>
+            <a href="mailto:ysn1263@gmail.com" class="mobile-link block px-3 py-2 rounded-lg text-base font-medium text-white bg-brand-500 text-center flex items-center justify-center gap-2">
+                <i class="fa-regular fa-envelope"></i> ysn1263@gmail.com
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section id="hero" class="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
+            <!-- Background Glow -->
+            <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute top-1/3 right-10 w-[300px] h-[300px] bg-accent-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="grid lg:grid-cols-12 gap-12 items-center">
+                    
+                    <!-- Left Column: Title & Intro -->
+                    <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 text-xs font-semibold tracking-wide">
+                            <span class="w-2 h-2 rounded-full bg-brand-500 animate-ping"></span>
+                            20 餘年軟體開發與系統分析資歷
+                        </div>
+
+                        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                            系統分析師 <br>
+                            <span class="gradient-text">跨產業系統開發與 AI 應用</span>
+                        </h1>
+
+                        <p class="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                            擁有邁向資深職涯的深厚底蘊，橫跨資訊軟體業、公部門、保全服務業與零售產業。具備從早期網頁開發、ERP/BPM 系統建置、公部門資安公文數位化，到全端系統開發及前台零售預售後台分析的完整視野。
+                        </p>
+
+                        <!-- Key Stats -->
+                        <div class="grid grid-cols-3 gap-4 pt-4 max-w-md mx-auto lg:mx-0">
+                            <div class="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-center shadow-sm">
+                                <div class="text-2xl font-bold text-brand-600 dark:text-brand-400">20+</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">資深總年資 (年)</div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-center shadow-sm">
+                                <div class="text-2xl font-bold text-accent-500">4 大</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">跨領域資歷 (零售/保全/公部門/資訊)</div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-center shadow-sm">
+                                <div class="text-2xl font-bold text-emerald-500">SA/SD</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">規格與架構設計</div>
+                            </div>
+                        </div>
+
+                        <!-- CTA Buttons -->
+                        <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                            <a href="#experience" class="px-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-sm hover:opacity-90 transition-all shadow-md">
+                                瀏覽職涯貢獻
+                            </a>
+                            <a href="#skills" class="px-6 py-3 rounded-xl bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-semibold text-sm hover:bg-slate-300 dark:hover:bg-slate-700 transition-all">
+                                檢視專業技能
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Avatar Photo & Interactive Card -->
+                    <div class="lg:col-span-5 flex justify-center">
+                        <div class="relative w-full max-w-sm sm:max-w-md">
+                            <!-- Glow effects -->
+                            <div class="absolute -top-4 -left-4 w-56 h-56 bg-brand-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                            <div class="absolute -bottom-4 -right-4 w-56 h-56 bg-accent-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                            <!-- Glass Card Container -->
+                            <div class="glass-card rounded-3xl p-6 shadow-2xl relative z-10 border border-white/50 dark:border-slate-700/50">
+                                
+                                <!-- Profile Photo Header -->
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="relative w-24 h-24 rounded-2xl p-0.5 bg-gradient-to-tr from-brand-500 via-accent-500 to-emerald-400 shadow-xl shrink-0">
+                                        <img src="https://img.ai365.fans/cdn-cgi/image/width=1400,quality=90,format=auto/artworks/8ec34e74-54d8-4f4e-af27-4cb04db398b9/eil3dmhd1lq.png" 
+                                             alt="系統分析師個人大頭照" 
+                                             onerror="this.onerror=null; this.src='https://placehold.co/300x300/0284c7/ffffff?text=System+Analyst';"
+                                             class="w-full h-full object-cover rounded-[14px]">
+                                        <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" title="積極探索 AI 應用"></span>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">系統分析師 (SA)</h2>
+                                        <p class="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-0.5">需求訪談 / DB架構 / 規格撰寫</p>
+                                        <div class="inline-flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                                            <i class="fa-solid fa-code-branch text-brand-500"></i>
+                                            <span>ASP.NET / C# / SQL / AI</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Highlight Info Badges -->
+                                <div class="space-y-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center shrink-0">
+                                            <i class="fa-solid fa-store text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">零售產業 (1.5 年)</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">預售系統後台 / DB 欄位設計</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-accent-500/10 text-accent-500 flex items-center justify-center shrink-0">
+                                            <i class="fa-solid fa-shield-halved text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">保全服務業 (10 年)</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">軟體開發與 SA 兼任 / E-Form & EIP</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                                            <i class="fa-solid fa-building-columns text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">公家機關 (3.5 年)</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">資安行政 / 公文線上簽核推動</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                                            <i class="fa-solid fa-laptop-code text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">資訊軟體公司 (8.5 年)</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">ERP 資材模組 / BPM / 網頁開發</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AI365 Link Card Button -->
+                                <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+                                    <a href="https://ai365.fans/user.html?id=8ec34e74-54d8-4f4e-af27-4cb04db398b9" target="_blank" rel="noopener noreferrer" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-brand-500/10 to-accent-500/10 hover:from-brand-500/20 hover:to-accent-500/20 border border-brand-500/20 text-brand-600 dark:text-brand-400 font-semibold text-xs flex items-center justify-between transition-all group">
+                                        <span class="flex items-center gap-2">
+                                            <i class="fa-solid fa-user-astronaut text-brand-500 group-hover:scale-110 transition-transform"></i>
+                                            造訪我的 AI365 個人社群主頁
+                                        </span>
+                                        <i class="fa-solid fa-arrow-right-long text-xs group-hover:translate-x-1 transition-transform"></i>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-16 bg-white/50 dark:bg-slate-800/50 border-y border-slate-200/80 dark:border-slate-800/80">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">身份背景與職涯專長</h2>
+                    <div class="w-12 h-1 bg-brand-500 mx-auto mt-3 rounded-full"></div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700/80 shadow-lg relative overflow-hidden">
+                    <div class="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 leading-relaxed space-y-4">
+                        <p class="text-base sm:text-lg">
+                            擁有超過 <strong class="text-slate-900 dark:text-white font-bold">20 餘年</strong> 的軟體開發與系統分析經驗，職涯歷程橫跨 <strong class="text-indigo-600 dark:text-indigo-400">資訊軟體業</strong>、<strong class="text-emerald-600 dark:text-emerald-400">公部門</strong>、<strong class="text-accent-500">保全服務業</strong> 與 <strong class="text-brand-600 dark:text-brand-400">零售產業</strong> 四大領域。
+                        </p>
+                        <p class="text-base">
+                            職涯從早期的網頁程式開發、ERP／BPM 系統建置，到公部門資安行政與公文電子化推動，再到保全服務業的全端系統開發與分析，近期則轉向零售產業，負責更貼近前台業務的系統分析工作，具備從<strong class="text-slate-900 dark:text-white">企業內控系統</strong>、<strong class="text-slate-900 dark:text-white">公部門行政流程</strong>到<strong class="text-slate-900 dark:text-white">消費端應用</strong>的完整視野。
+                        </p>
+                        <p class="text-base">
+                            擅長扮演業務單位與技術開發團隊之間的橋樑，能快速精準梳理模糊需求並轉化為高可靠度的開發規格書（SD）。目前正積極學習 AI 應用技術，期望將長年累積的系統分析基礎延伸至 AI 應用開發領域。
+                        </p>
+                    </div>
+
+                    <!-- Four Industry Highlights -->
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/60">
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white mb-2 text-sm">
+                                <i class="fa-solid fa-store text-brand-500"></i>
+                                零售產業 (1.5 年)
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                                專注消費端前台與預售後台模組，優化商品上架流程與 DB 架構設計。
+                            </p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white mb-2 text-sm">
+                                <i class="fa-solid fa-shield-halved text-accent-500"></i>
+                                保全服務業 (10 年)
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                                一人兼任開發與 SA，主導電子表單 (E-Form) 與 EIP 企業入口網站整合。
+                            </p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white mb-2 text-sm">
+                                <i class="fa-solid fa-building-columns text-emerald-500"></i>
+                                公家機關 (3.5 年)
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                                負責資安行政把關，推動公文線上簽核系統，落實機關流程數位化。
+                            </p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white mb-2 text-sm">
+                                <i class="fa-solid fa-laptop-code text-indigo-500"></i>
+                                資訊公司 (8.5 年)
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                                參與 ERP 資材模組、BPM 流程建置及早期網頁程式開發，奠定深厚技術實力。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experience & Responsibilities Section -->
+        <section id="experience" class="py-20">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-16">
+                    <span class="text-brand-600 dark:text-brand-400 text-xs font-bold tracking-wider uppercase">Key Achievements</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">職責與專案貢獻</h2>
+                    <div class="w-12 h-1 bg-brand-500 mx-auto mt-3 rounded-full"></div>
+                </div>
+
+                <div class="space-y-12 relative before:absolute before:inset-0 before:left-4 sm:before:left-1/2 before:-ml-px before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                    
+                    <!-- Timeline Item 1: Retail Industry -->
+                    <div class="relative flex flex-col sm:flex-row items-start group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-500 text-white font-bold text-sm shadow-md sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-10 shrink-0">
+                            1
+                        </div>
+                        
+                        <div class="w-full sm:w-[calc(50%-2rem)] mt-4 sm:mt-0 sm:mr-auto pl-10 sm:pl-0 sm:pr-0">
+                            <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-md hover:shadow-xl transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-md bg-brand-500/10 text-brand-600 dark:text-brand-400 text-xs font-bold">
+                                        近期資歷 (1.5 年)
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-store"></i> 零售產業</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                                    預售系統後台優化與 SA/SD 規格建置
+                                </h3>
+                                <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-brand-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>預售系統後台功能優化：</strong>主導預售系統後台功能優化專案，重新設計商品上架設定流程，協助降低使用者操作複雜度，並強化預售商品資訊呈現的完整性。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-brand-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>需求訪談與規格撰寫：</strong>執行完整需求訪談流程，將業務單位的模糊需求轉化為可執行的程式設計規格書。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-brand-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>資料庫架構設計：</strong>負責資料庫欄位架構設計，確保系統資料結構符合業務邏輯與擴充性需求。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item 2: Security Industry -->
+                    <div class="relative flex flex-col sm:flex-row items-start group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-accent-500 text-white font-bold text-sm shadow-md sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-10 shrink-0">
+                            2
+                        </div>
+
+                        <div class="w-full sm:w-[calc(50%-2rem)] mt-4 sm:mt-0 sm:ml-auto pl-10 sm:pl-0">
+                            <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-md hover:shadow-xl transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-md bg-accent-500/10 text-accent-500 text-xs font-bold">
+                                        資深資歷 (10 年)
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-shield"></i> 保全服務業</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                                    全端軟體開發、SA 分析與 E-Form / EIP 系統
+                                </h3>
+                                <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-accent-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>軟體開發與系統分析兼任：</strong>因公司規模精簡、分工不細，一人身兼軟體開發與系統分析雙重角色。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-accent-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>電子表單（E-Form）系統設計：</strong>長期負責電子表單（E-Form）系統設計，協助企業內部流程數位化。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-accent-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>EIP 企業入口網站開發：</strong>參與 EIP（企業入口網站）部分功能開發，支援企業內部資訊整合與員工作業效率。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item 3: Government Sector -->
+                    <div class="relative flex flex-col sm:flex-row items-start group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-white font-bold text-sm shadow-md sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-10 shrink-0">
+                            3
+                        </div>
+
+                        <div class="w-full sm:w-[calc(50%-2rem)] mt-4 sm:mt-0 sm:mr-auto pl-10 sm:pl-0 sm:pr-0">
+                            <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-md hover:shadow-xl transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                                        公部門資歷 (3.5 年)
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-building-columns"></i> 公家機關</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                                    資安行政管理與公文線上簽核系統推動
+                                </h3>
+                                <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-emerald-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>資安行政業務：</strong>負責資安行政業務，把關機關資訊安全管理與合規要求。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-emerald-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>公文線上簽核系統推動：</strong>推動公文線上簽核系統，協助機關公文流程數位化、顯著提升行政效率。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item 4: IT Software Company (ERP & BPM) -->
+                    <div class="relative flex flex-col sm:flex-row items-start group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-sm shadow-md sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-10 shrink-0">
+                            4
+                        </div>
+
+                        <div class="w-full sm:w-[calc(50%-2rem)] mt-4 sm:mt-0 sm:ml-auto pl-10 sm:pl-0">
+                            <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-md hover:shadow-xl transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-500 text-xs font-bold">
+                                        資訊軟體業 (6.5 年)
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-laptop-code"></i> 資訊公司</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                                    ERP 系統資材模組與 BPM 流程建置
+                                </h3>
+                                <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-indigo-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>ERP 系統資材作業模組開發：</strong>從事軟體開發工作，參與 ERP 系統資材作業模組開發，支援企業物料管理流程。</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-indigo-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>BPM 企業流程管理系統建置：</strong>參與 BPM（企業流程管理）系統建置，深入掌控企業複雜流程運作邏輯。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item 5: IT Company Early Days -->
+                    <div class="relative flex flex-col sm:flex-row items-start group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-sm shadow-md sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-10 shrink-0">
+                            5
+                        </div>
+
+                        <div class="w-full sm:w-[calc(50%-2rem)] mt-4 sm:mt-0 sm:mr-auto pl-10 sm:pl-0 sm:pr-0">
+                            <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-md hover:shadow-xl transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                                        職涯奠基 (2 年)
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-code"></i> 資訊公司</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                                    網頁程式開發與技術扎根
+                                </h3>
+                                <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-check text-amber-500 text-xs mt-1 shrink-0"></i>
+                                        <span><strong>網頁程式開發：</strong>從事網頁程式開發工作，奠定扎實的前端與網頁技術基礎，作為後續 20 餘年職涯發揮的堅實基石。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Professional Skills Section -->
+        <section id="skills" class="py-16 bg-white/50 dark:bg-slate-800/50 border-y border-slate-200/80 dark:border-slate-800/80">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">專業技能全圖譜</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">結合軟實力需求分析與多重後端、前端、資料庫硬實力技術</p>
+                    <div class="w-12 h-1 bg-brand-500 mx-auto mt-3 rounded-full"></div>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Skill Card 1: Programming -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-brand-500 transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">程式設計類</h3>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-slate-800 text-brand-700 dark:text-brand-300 text-xs font-semibold">ASP.NET</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-slate-800 text-brand-700 dark:text-brand-300 text-xs font-semibold">C#</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-slate-800 text-brand-700 dark:text-brand-300 text-xs font-semibold">ASP</span>
+                        </div>
+                    </div>
+
+                    <!-- Skill Card 2: Databases -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-500 transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-database"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">資料庫設計類</h3>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">MS SQL</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">Oracle</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">DB2</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">MySQL</span>
+                        </div>
+                    </div>
+
+                    <!-- Skill Card 3: Web Frontend -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-accent-500 transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-accent-500/10 text-accent-500 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-laptop-code"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">網頁技術類</h3>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">HTML5 / CSS3</span>
+                            <span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">JavaScript</span>
+                            <span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">jQuery</span>
+                            <span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">Bootstrap</span>
+                            <span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">KendoUI</span>
+                        </div>
+                    </div>
+
+                    <!-- Skill Card 4: Reports & SA -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-cyan-500 transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">報表系統與 SA 分析</h3>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-slate-800 text-cyan-700 dark:text-cyan-300 text-xs font-semibold">Crystal Report</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">需求訪談</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">規格書撰寫 (SD)</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">DB 欄位設計</span>
+                        </div>
+                    </div>
+
+                    <!-- Skill Card 5: Enterprise Domain Knowledge -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500 transition-all group lg:col-span-2">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-sitemap"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">企業系統經驗 (Enterprise Domain)</h3>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-boxes-packing text-indigo-500 mr-1"></i>ERP 資材作業模組</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-diagram-next text-brand-500 mr-1"></i>BPM 企業流程管理</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-file-signature text-accent-500 mr-1"></i>E-Form 電子表單</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-network-wired text-emerald-500 mr-1"></i>EIP 企業入口網站</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-stamp text-emerald-600 mr-1"></i>公文線上簽核系統</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"><i class="fa-solid fa-cash-register text-brand-600 mr-1"></i>零售預售系統後台</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Learning & Future Vision Section -->
+        <section id="ai-learning" class="py-20 relative overflow-hidden">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="glass-card rounded-3xl p-8 sm:p-10 border border-amber-500/30 relative z-10 bg-gradient-to-br from-amber-500/5 via-transparent to-brand-500/5">
+                    <div class="grid md:grid-cols-12 gap-8 items-center">
+                        
+                        <div class="md:col-span-8 space-y-4">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                                <i class="fa-solid fa-sparkles"></i> 持續學習與前瞻願景
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                                AI 應用技術探索與企業流程優化
+                            </h2>
+                            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                                目前投入 AI 應用技術學習，關注 AI 於企業系統與流程優化的實務應用。期望運用 20 餘年累積的堅實軟體開發與 SA 分析基礎，作為 AI 創新落地與傳統企業系統賦能轉型的關鍵紐帶。
+                            </p>
+                            <div class="flex flex-wrap gap-3 pt-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700">
+                                    <i class="fa-solid fa-robot text-amber-500"></i> AI 需求與系統整合
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700">
+                                    <i class="fa-solid fa-gears text-brand-500"></i> 流程智慧自動化
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700">
+                                    <i class="fa-solid fa-lightbulb text-accent-500"></i> SA / SD 賦能 AI 實務應用
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-4 flex justify-center">
+                            <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-tr from-amber-400 via-brand-500 to-accent-500 p-1 flex items-center justify-center shadow-xl">
+                                <div class="w-full h-full bg-white dark:bg-slate-900 rounded-full flex flex-col items-center justify-center text-center p-4">
+                                    <i class="fa-solid fa-brain text-4xl text-amber-500 mb-2 animate-bounce"></i>
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white">AI Application</span>
+                                    <span class="text-[10px] text-slate-500">Continuous Growth</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-16 bg-white/50 dark:bg-slate-800/50 border-t border-slate-200/80 dark:border-slate-800/80">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">攜手開創系統轉型與 AI 應用的新篇章</h2>
+                <p class="text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
+                    如果您正尋求兼具 20 餘年豐富跨產業系統開發與分析經驗，並具備學習與導入 AI 技術企圖心的資深系統分析師，歡迎隨時與我聯繫！
+                </p>
+
+                <!-- Email Display Badge -->
+                <div class="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200 font-semibold text-base sm:text-lg">
+                    <i class="fa-regular fa-envelope text-brand-500"></i>
+                    <span class="tracking-wide">ysn1263@gmail.com</span>
+                </div>
+
+                <!-- Toast message area -->
+                <div id="copyToast" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium shadow-lg transition-all">
+                    <i class="fa-solid fa-check"></i> 已成功複製 E-mail 地址！
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+                    <a href="mailto:ysn1263@gmail.com" class="px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm transition-all shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> 直接寄信
+                    </a>
+                    <button onclick="copyContact('ysn1263@gmail.com')" class="px-6 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm transition-all flex items-center gap-2">
+                        <i class="fa-regular fa-copy"></i> 複製 E-mail
+                    </button>
+                    <a href="https://ai365.fans/user.html?id=8ec34e74-54d8-4f4e-af27-4cb04db398b9" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-brand-600 dark:text-brand-400 font-semibold text-sm transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-globe"></i> AI365 社群主頁
+                    </a>
+                    <a href="#hero" class="px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium text-sm transition-all">
+                        返回頁首
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+            <p>© 2026 系統分析師 (System Analyst) - 個人履歷作品集</p>
+            <div class="flex items-center gap-4">
+                <span>跨產業經驗 20+ 年｜深耕 SA/SD 與 AI 實務應用</span>
+                <a href="https://ai365.fans/user.html?id=8ec34e74-54d8-4f4e-af27-4cb04db398b9" target="_blank" rel="noopener noreferrer" class="hover:text-brand-500 transition-colors">
+                    AI365
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Player Element -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://img.ai365.fans/artworks/8ec34e74-54d8-4f4e-af27-4cb04db398b9/h7zdn7q9wz8.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggleBtn = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const htmlEl = document.documentElement;
+
+            // Check system preference or stored user choice
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                htmlEl.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                htmlEl.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-slate-700';
+            }
+
+            // Theme Toggle Click Listener
+            themeToggleBtn.addEventListener('click', function() {
+                if (htmlEl.classList.contains('dark')) {
+                    htmlEl.classList.remove('dark');
+                    localStorage.theme = 'light';
+                    themeIcon.className = 'fa-solid fa-moon text-slate-700';
+                } else {
+                    htmlEl.classList.add('dark');
+                    localStorage.theme = 'dark';
+                    themeIcon.className = 'fa-solid fa-sun text-amber-400';
+                }
+            });
+
+            const bgMusic = document.getElementById('bgMusic');
+            const musicToggleBtn = document.getElementById('musicToggle');
+            const musicIcon = document.getElementById('musicIcon');
+            const musicText = document.getElementById('musicText');
+            let isPlaying = false;
+
+            musicToggleBtn.addEventListener('click', function() {
+                if (isPlaying) {
+                    bgMusic.pause();
+                    isPlaying = false;
+                    musicIcon.className = 'fa-solid fa-music text-base text-slate-500';
+                    if (musicText) musicText.innerText = '音樂 Off';
+                    musicToggleBtn.classList.remove('ring-2', 'ring-brand-500', 'bg-brand-500/20');
+                } else {
+                    bgMusic.play().then(() => {
+                        isPlaying = true;
+                        musicIcon.className = 'fa-solid fa-compact-disc text-base text-brand-500 animate-spin';
+                        if (musicText) musicText.innerText = '音樂 On';
+                        musicToggleBtn.classList.add('ring-2', 'ring-brand-500', 'bg-brand-500/20');
+                    }).catch(err => {
+                        console.log("Autoplay / audio playback interaction error:", err);
+                    });
+                }
+            });
+
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileLinks = document.querySelectorAll('.mobile-link');
+
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+        });
+
+        function copyContact(email) {
+            const emailAddress = email || "ysn1263@gmail.com";
+            const tempInput = document.createElement('textarea');
+            tempInput.value = emailAddress;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const toast = document.getElementById('copyToast');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
