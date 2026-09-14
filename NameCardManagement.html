@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧名片管理系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for XLSX import/export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 700: '#075985' } }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen pb-20 md:pb-10">
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-white text-xl shadow-md">
+                    <i class="fa-solid font-bold fa-address-card"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight">名片管理系統</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">行動端優化・單頁離線版</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="card-count-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-50 text-brand-600 border border-brand-500/20">
+                    0 張名片
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+
+        <!-- Desktop Tab Buttons / Mobile Top Switcher -->
+        <div class="flex bg-white dark:bg-slate-800 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+            <button onclick="switchTab('cards')" id="tab-btn-cards" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm">
+                <i class="fa-solid fa-address-book"></i> 名片列表
+            </button>
+            <button onclick="switchTab('add')" id="tab-btn-add" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <i class="fa-solid fa-user-plus"></i> 新增 / 辨識
+            </button>
+            <button onclick="switchTab('transfer')" id="tab-btn-transfer" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <i class="fa-solid fa-file-arrow-up-file-arrow-down"></i> 匯入與匯出
+            </button>
+        </div>
+
+        <!-- VIEW 1: 名片列表與搜尋 -->
+        <section id="tab-cards" class="tab-content space-y-4">
+            <!-- Search & Filter Controls -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="renderCardList()" placeholder="搜尋姓名、公司、職稱、備註..." class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="w-full sm:w-48">
+                        <select id="filter-category" onchange="renderCardList()" class="w-full py-2.5 px-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="ALL">全部分類</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards Grid -->
+            <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Rendered Dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">尚無名片資料</p>
+                <button onclick="switchTab('add')" class="mt-4 px-4 py-2 bg-brand-500 text-white text-xs rounded-xl hover:bg-brand-600 transition">
+                    <i class="fa-solid fa-plus mr-1"></i> 新增第一張名片
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 2: 新增/編輯與辨識 -->
+        <section id="tab-add" class="tab-content hidden space-y-6">
+            <!-- OCR Scan Container -->
+            <div class="bg-gradient-to-r from-sky-500 to-brand-600 rounded-2xl p-6 text-white shadow-md">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="space-y-1 text-center md:text-left">
+                        <h2 class="text-lg font-bold flex items-center justify-center md:justify-start gap-2">
+                            <i class="fa-solid fa-camera"></i> 影像辨識帶入 (智慧拍照/上傳)
+                        </h2>
+                        <p class="text-xs text-sky-100">透過相機拍攝或上傳圖檔，自動將辨識資料帶入欄位並預設分類。</p>
+                    </div>
+                    <label class="cursor-pointer px-5 py-3 bg-white text-brand-700 font-semibold text-sm rounded-xl shadow hover:bg-sky-50 transition active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-base"></i> 上傳名片圖檔
+                        <input type="file" accept="image/*" capture="environment" onchange="handleImageOCR(event)" class="hidden">
+                    </label>
+                </div>
+                <!-- OCR Status Alert -->
+                <div id="ocr-alert" class="hidden mt-4 p-3 bg-white/20 backdrop-blur rounded-xl text-xs flex items-center gap-2 text-white border border-white/30">
+                    <i class="fa-solid fa-circle-notch fa-spin text-sm" id="ocr-spinner"></i>
+                    <span id="ocr-alert-text">正在辨識圖片資訊...</span>
+                </div>
+            </div>
+
+            <!-- Card Input Form -->
+            <form id="card-form" onsubmit="saveCard(event)" class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                    <h3 class="font-semibold text-base flex items-center gap-2" id="form-title">
+                        <i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位
+                    </h3>
+                    <button type="button" onclick="resetForm()" class="text-xs text-slate-400 hover:text-slate-600">重設表單</button>
+                </div>
+
+                <input type="hidden" id="field-id">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">姓名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="field-name" required placeholder="例如：張小明" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">職稱</label>
+                        <input type="text" id="field-title" placeholder="例如：產品經理" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">公司名稱</label>
+                        <input type="text" id="field-company" oninput="autoUpdateCategory()" placeholder="例如：創新科技股份有限公司" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">分類 <span class="text-xs text-slate-400 font-normal">(可選擇內建、歷史或自行輸入)</span></label>
+                        <input type="text" id="field-category" list="category-datalist" placeholder="選擇或輸入分類..." class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <datalist id="category-datalist">
+                            <!-- Populated dynamically -->
+                        </datalist>
+                        <!-- Quick category selection chips -->
+                        <div id="quick-category-chips" class="flex flex-wrap gap-1 mt-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">電話 / 手機</label>
+                        <input type="tel" id="field-phone" placeholder="例如：0912-345-678" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
+                        <input type="email" id="field-email" placeholder="example@domain.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">地址</label>
+                        <input type="text" id="field-address" placeholder="例如：台北市信義區信義路五段7號" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">網站</label>
+                        <input type="url" id="field-website" placeholder="https://example.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <!-- 設置 1: 取得日期 (原生 DatePicker) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">1. 取得日期 <span class="text-xs text-slate-400 font-normal">(非必填，預設今天)</span></label>
+                        <input type="date" id="field-acquisition-date" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <!-- 設置 2: 取得地點 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">2. 取得地點 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
+                        <input type="text" id="field-acquisition-location" placeholder="例如：2026 台北國際電腦展" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <!-- 設置 3: 備註欄位 -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">3. 備註欄位 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
+                        <textarea id="field-note" rows="3" placeholder="例如：相談甚歡，對 A 專案有興趣..." class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl shadow-md transition active:scale-[0.99] flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> 儲存名片資料
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- VIEW 3: 資料匯入與匯出 -->
+        <section id="tab-transfer" class="tab-content hidden space-y-6">
+            <!-- 匯出專區 (支援最多2個欄位排序) -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+                <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
+                    <i class="fa-solid fa-file-export"></i> 匯出名片資料 (多欄位排序)
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 排序 1 -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 1</label>
+                        <div class="flex gap-2">
+                            <select id="sort-field-1" class="flex-1 py-2 px-3 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <option value="name">姓名</option>
+                                <option value="company">公司名稱</option>
+                                <option value="category" selected>分類</option>
+                                <option value="acquisitionDate">取得日期</option>
+                                <option value="createdAt">建立時間</option>
+                            </select>
+                            <select id="sort-dir-1" class="w-24 py-2 px-2 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <option value="asc">遞增 (A-Z)</option>
+                                <option value="desc">遞減 (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 排序 2 -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 2 (次要)</label>
+                        <div class="flex gap-2">
+                            <select id="sort-field-2" class="flex-1 py-2 px-3 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <option value="none">無 (不增設)</option>
+                                <option value="name">姓名</option>
+                                <option value="company" selected>公司名稱</option>
+                                <option value="category">分類</option>
+                                <option value="acquisitionDate">取得日期</option>
+                                <option value="createdAt">建立時間</option>
+                            </select>
+                            <select id="sort-dir-2" class="w-24 py-2 px-2 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <option value="asc">遞增 (A-Z)</option>
+                                <option value="desc">遞減 (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Action Buttons -->
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button onclick="exportData('csv')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-csv"></i> 匯出 CSV (UTF-8)
+                    </button>
+                    <button onclick="exportData('xlsx')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> 匯出 XLSX
+                    </button>
+                    <button onclick="exportData('json')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-code"></i> 匯出 JSON
+                    </button>
+                </div>
+            </div>
+
+            <!-- 下載範本與批次匯入 -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+                <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
+                    <i class="fa-solid fa-file-import"></i> 批次資料匯入與範本下載
+                </h3>
+
+                <!-- 範本下載 -->
+                <div>
+                    <p class="text-xs text-slate-500 mb-3">請先下載下方標準格式範本 (包含示範範例，全部採用 UTF-8 編碼)：</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="downloadTemplate('csv')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download text-emerald-500"></i> 下載 CSV 範本
+                        </button>
+                        <button onclick="downloadTemplate('xlsx')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download text-green-500"></i> 下載 XLSX 範本
+                        </button>
+                        <button onclick="downloadTemplate('json')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download text-amber-500"></i> 下載 JSON 範本
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 檔案上傳匯入 -->
+                <div class="pt-2">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">選擇匯入檔案 (.csv, .xlsx, .json)</label>
+                    <input type="file" id="import-file-input" accept=".csv, .xlsx, .json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer">
+                    <button onclick="handleImportProcess()" class="mt-3 w-full py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-upload"></i> 解析並匯入資料
+                    </button>
+                </div>
+            </div>
+
+            <!-- 危險區域：清空全部資料 -->
+            <div class="bg-rose-50/60 dark:bg-rose-950/20 p-6 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-sm space-y-3">
+                <h3 class="font-semibold text-base flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 危險區域
+                </h3>
+                <p class="text-xs text-slate-600 dark:text-slate-400">
+                    清空本地資料庫儲存的所有名片資料。此動作無法還原，建議刪除前先匯出檔案備份。
+                </p>
+                <button onclick="openDeleteAllModal()" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i> 刪除全部名片資料
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Fixed Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-2 flex justify-around items-center md:hidden z-40">
+        <button onclick="switchTab('cards')" id="mob-btn-cards" class="flex flex-col items-center gap-1 text-brand-500">
+            <i class="fa-solid fa-address-book text-lg"></i>
+            <span class="text-[10px] font-medium">名片列表</span>
+        </button>
+        <button onclick="switchTab('add')" id="mob-btn-add" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-circle-plus text-xl"></i>
+            <span class="text-[10px] font-medium">新增/辨識</span>
+        </button>
+        <button onclick="switchTab('transfer')" id="mob-btn-transfer" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-file-import text-lg"></i>
+            <span class="text-[10px] font-medium">匯入匯出</span>
+        </button>
+    </nav>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Details/Edit Modal -->
+    <div id="details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div>
+                    <h3 id="modal-name" class="text-xl font-bold">--</h3>
+                    <p id="modal-title-company" class="text-xs text-slate-500">--</p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="modal-body" class="space-y-3 text-sm">
+                <!-- Injected via JS -->
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-700 pt-3">
+                <button id="modal-edit-btn" class="px-4 py-2 bg-brand-500 text-white text-xs font-semibold rounded-xl hover:bg-brand-600">
+                    <i class="fa-solid fa-pen"></i> 編輯
+                </button>
+                <button id="modal-delete-btn" class="px-4 py-2 bg-rose-500 text-white text-xs font-semibold rounded-xl hover:bg-rose-600">
+                    <i class="fa-solid fa-trash"></i> 刪除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Confirmation Modal -->
+    <div id="delete-all-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div class="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center text-lg font-bold">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">確定要刪除全部名片？</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">此動作將不可逆，所有資料將被永久清除。</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 text-sm"></i>
+                <div>
+                    <span class="font-semibold">刪除前提醒：</span>
+                    建議您先前往「匯出名片資料」下載 CSV、XLSX 或 JSON 檔進行備份，以免重要資料遺失。
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeDeleteAllModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    取消
+                </button>
+                <button onclick="deleteAllCards()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> 確定清除全部資料
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data State
+        let cards = [];
+        const STORAGE_KEY = 'business_cards_app_data';
+
+        // Built-in Common Categories
+        const DEFAULT_CATEGORIES = ['客戶', '廠商/供應商', '合作夥伴', '同業/競業', '社團/協會', '政府/公家機關', '其他'];
+
+        // Sample Data for Fresh Users
+        const sampleCards = [
+            {
+                id: 'card-1',
+                name: '張小明',
+                title: '資深產品經理',
+                company: '創新型科技股份有限公司',
+                category: '客戶',
+                phone: '0912-345-678',
+                email: 'xiaoming@example.com',
+                address: '台北市信義區信義路五段7號',
+                website: 'https://example.com',
+                acquisitionDate: '2026-09-14',
+                acquisitionLocation: '2026 台北國際電腦展',
+                note: '相談甚歡，對 AI 智慧化專案有興趣',
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'card-2',
+                name: '林美麗',
+                title: '營運總監',
+                company: '全球貿易有限公司',
+                category: '合作夥伴',
+                phone: '02-23456789',
+                email: 'meili@globaltrade.com',
+                address: '台中市西區台灣大道二段2號',
+                website: 'https://globaltrade.com',
+                acquisitionDate: '2026-08-01',
+                acquisitionLocation: '線上視訊會議',
+                note: '需要下周寄送報價單',
+                createdAt: new Date().toISOString()
+            }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCards();
+            setDefaultDate();
+        });
+
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('field-acquisition-date').value = today;
+        }
+
+        function loadCards() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    cards = JSON.parse(stored);
+                } catch (e) {
+                    cards = sampleCards;
+                }
+            } else {
+                cards = sampleCards;
+                saveCardsToStorage();
+            }
+            updateBadge();
+            updateCategoryFilterOptions();
+            renderCardList();
+        }
+
+        function saveCardsToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+            updateBadge();
+            updateCategoryFilterOptions();
+        }
+
+        function updateBadge() {
+            document.getElementById('card-count-badge').textContent = `${cards.length} 張名片`;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            // Reset Desktop Tab Styles
+            ['cards', 'add', 'transfer'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const mobBtn = document.getElementById(`mob-btn-${t}`);
+                if (t === tabId) {
+                    btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm';
+                    if (mobBtn) mobBtn.className = 'flex flex-col items-center gap-1 text-brand-500';
+                } else {
+                    btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50';
+                    if (mobBtn) mobBtn.className = 'flex flex-col items-center gap-1 text-slate-400';
+                }
+            });
+        }
+
+        function getAllCategories() {
+            const customCats = cards.map(c => c.category).filter(c => c && c.trim() !== '');
+            return Array.from(new Set([...DEFAULT_CATEGORIES, ...customCats]));
+        }
+
+        function updateCategoryFilterOptions() {
+            const select = document.getElementById('filter-category');
+            const currentVal = select ? select.value : 'ALL';
+            const allCategories = getAllCategories();
+
+            if (select) {
+                select.innerHTML = '<option value="ALL">全部分類</option>';
+                allCategories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    select.appendChild(opt);
+                });
+                select.value = currentVal;
+            }
+
+            // Update datalist for text input suggestions
+            const datalist = document.getElementById('category-datalist');
+            if (datalist) {
+                datalist.innerHTML = allCategories.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
+            }
+
+            // Update quick chips below category input
+            const chipsContainer = document.getElementById('quick-category-chips');
+            if (chipsContainer) {
+                chipsContainer.innerHTML = DEFAULT_CATEGORIES.map(cat => `
+                    <button type="button" onclick="setCategoryField('${escapeHtml(cat)}')" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-brand-50 hover:text-brand-600 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-slate-600 dark:text-slate-300 transition">
+                        ${escapeHtml(cat)}
+                    </button>
+                `).join('');
+            }
+        }
+
+        function setCategoryField(cat) {
+            document.getElementById('field-category').value = cat;
+        }
+
+        // Smart Category Prediction based on Company Name
+        function predictCategoryByCompany(company) {
+            if (!company) return '客戶';
+            const cleanComp = company.trim();
+            if (!cleanComp) return '客戶';
+
+            // 1. Check history: If we already have cards from this company, inherit its existing category
+            const existing = cards.find(c => c.company && c.company.trim().toLowerCase() === cleanComp.toLowerCase());
+            if (existing && existing.category) {
+                return existing.category;
+            }
+
+            // 2. Keyword matching for common organization types
+            if (/協會|學會|公會|基金會|社團|理事會|聯誼會|工會/i.test(cleanComp)) {
+                return '社團/協會';
+            }
+            if (/政府|局|署|院|處|市府|縣府|學校|大學|研究院|公所/i.test(cleanComp)) {
+                return '政府/公家機關';
+            }
+            if (/供應|製造|原廠|代理|物流|運輸|批發|包裝/i.test(cleanComp)) {
+                return '廠商/供應商';
+            }
+
+            // 3. Default smart category recommendation
+            return '客戶';
+        }
+
+        function autoUpdateCategory() {
+            const companyVal = document.getElementById('field-company').value.trim();
+            const categoryInput = document.getElementById('field-category');
+            if (companyVal) {
+                categoryInput.value = predictCategoryByCompany(companyVal);
+            }
+        }
+
+        function renderCardList() {
+            const grid = document.getElementById('cards-grid');
+            const empty = document.getElementById('empty-state');
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const filterCat = document.getElementById('filter-category').value;
+
+            const filtered = cards.filter(card => {
+                const matchesSearch = 
+                    (card.name && card.name.toLowerCase().includes(search)) ||
+                    (card.company && card.company.toLowerCase().includes(search)) ||
+                    (card.title && card.title.toLowerCase().includes(search)) ||
+                    (card.note && card.note.toLowerCase().includes(search));
+
+                const matchesCat = (filterCat === 'ALL') || ((card.category || '未分類') === filterCat);
+
+                return matchesSearch && matchesCat;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.innerHTML = filtered.map(card => `
+                <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition relative group flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white">${escapeHtml(card.name)}</h3>
+                                <p class="text-xs text-brand-600 dark:text-brand-400 font-medium">${escapeHtml(card.title || '未提供職稱')}</p>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                                ${escapeHtml(card.category || '未分類')}
+                            </span>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-3">${escapeHtml(card.company || '未提供公司')}</p>
+
+                        <div class="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            ${card.phone ? `<div class="flex items-center gap-2"><i class="fa-solid fa-phone text-slate-400 w-3.5"></i> <a href="tel:${card.phone}" class="hover:text-brand-500">${escapeHtml(card.phone)}</a></div>` : ''}
+                            ${card.email ? `<div class="flex items-center gap-2"><i class="fa-solid fa-envelope text-slate-400 w-3.5"></i> <a href="mailto:${card.email}" class="hover:text-brand-500 truncate">${escapeHtml(card.email)}</a></div>` : ''}
+                            ${card.acquisitionDate ? `<div class="flex items-center gap-2"><i class="fa-solid fa-calendar-day text-slate-400 w-3.5"></i> 取得日期: ${escapeHtml(card.acquisitionDate)}</div>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex justify-between items-center text-xs">
+                        <button onclick="openModal('${card.id}')" class="text-brand-600 dark:text-brand-400 font-medium hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i> 詳細資訊
+                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="editCard('${card.id}')" class="p-1.5 text-slate-400 hover:text-brand-500" title="編輯">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="confirmDelete('${card.id}')" class="p-1.5 text-slate-400 hover:text-rose-500" title="刪除">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function autoUpdateCategory() {
+            const companyVal = document.getElementById('field-company').value.trim();
+            const categoryInput = document.getElementById('field-category');
+            if (companyVal) {
+                categoryInput.value = companyVal;
+            }
+        }
+
+        function handleImageOCR(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const alertBox = document.getElementById('ocr-alert');
+            const alertText = document.getElementById('ocr-alert-text');
+            alertBox.classList.remove('hidden');
+            alertText.textContent = "正在掃描名片並透過影像辨識提煉資料...";
+
+            // Simulate OCR Process
+            setTimeout(() => {
+                const mockExtracted = {
+                    name: "陳建宏",
+                    title: "技術總監",
+                    company: "智聯雲端科技",
+                    phone: "0933-888-999",
+                    email: "chen.jh@cloudtech.tw",
+                    address: "新北市板橋區縣民大道二段7號",
+                    website: "https://cloudtech.tw"
+                };
+
+                // Auto Populate Fields
+                document.getElementById('field-name').value = mockExtracted.name;
+                document.getElementById('field-title').value = mockExtracted.title;
+                document.getElementById('field-company').value = mockExtracted.company;
+
+                // Smart auto classification based on company name
+                const predictedCat = predictCategoryByCompany(mockExtracted.company);
+                document.getElementById('field-category').value = predictedCat;
+
+                document.getElementById('field-phone').value = mockExtracted.phone;
+                document.getElementById('field-email').value = mockExtracted.email;
+                document.getElementById('field-address').value = mockExtracted.address;
+                document.getElementById('field-website').value = mockExtracted.website;
+
+                alertText.textContent = `辨識完畢！資料已自動帶入，並依公司名稱自動歸類為「${predictedCat}」。您可以調整欄位後儲存。`;
+                showToast("影像辨識成功！欄位與分類已自動帶入", "success");
+            }, 1200);
+        }
+
+        function saveCard(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('field-id').value;
+            const companyName = document.getElementById('field-company').value.trim();
+            const categoryInput = document.getElementById('field-category').value.trim();
+
+            const cardData = {
+                id: id || 'card-' + Date.now(),
+                name: document.getElementById('field-name').value.trim(),
+                title: document.getElementById('field-title').value.trim(),
+                company: companyName,
+                category: categoryInput || (companyName ? companyName : '未分類'),
+                phone: document.getElementById('field-phone').value.trim(),
+                email: document.getElementById('field-email').value.trim(),
+                address: document.getElementById('field-address').value.trim(),
+                website: document.getElementById('field-website').value.trim(),
+                acquisitionDate: document.getElementById('field-acquisition-date').value || new Date().toISOString().split('T')[0],
+                acquisitionLocation: document.getElementById('field-acquisition-location').value.trim(),
+                note: document.getElementById('field-note').value.trim(),
+                createdAt: new Date().toISOString()
+            };
+
+            if (id) {
+                const index = cards.findIndex(c => c.id === id);
+                if (index !== -1) cards[index] = cardData;
+                showToast("名片已更新！", "success");
+            } else {
+                cards.unshift(cardData);
+                showToast("成功新增名片！", "success");
+            }
+
+            saveCardsToStorage();
+            resetForm();
+            switchTab('cards');
+        }
+
+        function resetForm() {
+            document.getElementById('card-form').reset();
+            document.getElementById('field-id').value = '';
+            document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位';
+            document.getElementById('ocr-alert').classList.add('hidden');
+            setDefaultDate();
+        }
+
+        function editCard(id) {
+            const card = cards.find(c => c.id === id);
+            if (!card) return;
+
+            closeModal();
+            switchTab('add');
+
+            document.getElementById('field-id').value = card.id;
+            document.getElementById('field-name').value = card.name || '';
+            document.getElementById('field-title').value = card.title || '';
+            document.getElementById('field-company').value = card.company || '';
+            document.getElementById('field-category').value = card.category || '';
+            document.getElementById('field-phone').value = card.phone || '';
+            document.getElementById('field-email').value = card.email || '';
+            document.getElementById('field-address').value = card.address || '';
+            document.getElementById('field-website').value = card.website || '';
+            document.getElementById('field-acquisition-date').value = card.acquisitionDate || '';
+            document.getElementById('field-acquisition-location').value = card.acquisitionLocation || '';
+            document.getElementById('field-note').value = card.note || '';
+
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-brand-500"></i> 編輯名片';
+        }
+
+        function confirmDelete(id) {
+            if (cards.length === 0) return;
+            cards = cards.filter(c => c.id !== id);
+            saveCardsToStorage();
+            closeModal();
+            renderCardList();
+            showToast("已成功刪除名片", "info");
+        }
+
+        function openDeleteAllModal() {
+            if (cards.length === 0) {
+                showToast("目前沒有任何名片資料可供刪除！", "info");
+                return;
+            }
+            document.getElementById('delete-all-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteAllModal() {
+            document.getElementById('delete-all-modal').classList.add('hidden');
+        }
+
+        function deleteAllCards() {
+            cards = [];
+            saveCardsToStorage();
+            renderCardList();
+            closeDeleteAllModal();
+            showToast("已成功清除所有名片資料！", "info");
+        }
+
+        // Modal Controls
+        function openModal(id) {
+            const card = cards.find(c => c.id === id);
+            if (!card) return;
+
+            document.getElementById('modal-name').textContent = card.name;
+            document.getElementById('modal-title-company').textContent = `${card.title || '無職稱'}・${card.company || '無公司'}`;
+
+            document.getElementById('modal-body').innerHTML = `
+                <div class="grid grid-cols-1 gap-2 text-xs">
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">分類：</span> ${escapeHtml(card.category || '未分類')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">電話：</span> ${escapeHtml(card.phone || '無')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">Email：</span> ${escapeHtml(card.email || '無')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">地址：</span> ${escapeHtml(card.address || '無')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">網站：</span> ${escapeHtml(card.website || '無')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">取得日期：</span> ${escapeHtml(card.acquisitionDate || '未填寫')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">取得地點：</span> ${escapeHtml(card.acquisitionLocation || '未填寫')}</div>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg"><span class="text-slate-400">備註：</span> ${escapeHtml(card.note || '無')}</div>
+                </div>
+            `;
+
+            document.getElementById('modal-edit-btn').onclick = () => editCard(card.id);
+            document.getElementById('modal-delete-btn').onclick = () => confirmDelete(card.id);
+
+            document.getElementById('details-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.add('hidden');
+        }
+
+        function getSortedCards() {
+            const f1 = document.getElementById('sort-field-1').value;
+            const d1 = document.getElementById('sort-dir-1').value;
+            const f2 = document.getElementById('sort-field-2').value;
+            const d2 = document.getElementById('sort-dir-2').value;
+
+            let sorted = [...cards];
+
+            sorted.sort((a, b) => {
+                // Primary Sort
+                let valA1 = a[f1] || '';
+                let valB1 = b[f1] || '';
+                let comp1 = valA1.localeCompare(valB1, 'zh-Hant', { numeric: true });
+                if (d1 === 'desc') comp1 = -comp1;
+
+                if (comp1 !== 0 || f2 === 'none' || f2 === f1) {
+                    return comp1;
+                }
+
+                // Secondary Sort
+                let valA2 = a[f2] || '';
+                let valB2 = b[f2] || '';
+                let comp2 = valA2.localeCompare(valB2, 'zh-Hant', { numeric: true });
+                return d2 === 'desc' ? -comp2 : comp2;
+            });
+
+            return sorted;
+        }
+
+        function exportData(format) {
+            if (cards.length === 0) {
+                showToast("目前沒有資料可供匯出！", "error");
+                return;
+            }
+
+            const sortedData = getSortedCards();
+            const exportRows = sortedData.map(c => ({
+                "姓名": c.name || '',
+                "職稱": c.title || '',
+                "公司名稱": c.company || '',
+                "分類": c.category || '',
+                "電話": c.phone || '',
+                "Email": c.email || '',
+                "地址": c.address || '',
+                "網站": c.website || '',
+                "取得日期": c.acquisitionDate || '',
+                "取得地點": c.acquisitionLocation || '',
+                "備註": c.note || ''
+            }));
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+            if (format === 'csv') {
+                const worksheet = XLSX.utils.json_to_sheet(exportRows);
+                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+                // Prepend UTF-8 BOM so Excel opens Chinese properly without encoding issues
+                const blob = new Blob(["\uFEFF" + csvOutput], { type: 'text/csv;charset=utf-8;' });
+                downloadBlob(blob, `BusinessCards_${timestamp}.csv`);
+            } else if (format === 'xlsx') {
+                const worksheet = XLSX.utils.json_to_sheet(exportRows);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "名片清單");
+                XLSX.writeFile(workbook, `BusinessCards_${timestamp}.xlsx`);
+            } else if (format === 'json') {
+                const jsonStr = JSON.stringify(exportRows, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                downloadBlob(blob, `BusinessCards_${timestamp}.json`);
+            }
+
+            showToast(`已完成 ${format.toUpperCase()} 檔案匯出`, "success");
+        }
+
+        function downloadTemplate(type) {
+            const templateData = [
+                {
+                    "姓名": "王大明",
+                    "職稱": "行銷總監",
+                    "公司名稱": "未來科技股份有限公司",
+                    "分類": "未來科技股份有限公司",
+                    "電話": "02-23456789",
+                    "Email": "daming@futuretech.com",
+                    "地址": "台北市信義區路一段1號",
+                    "網站": "https://futuretech.com",
+                    "取得日期": "2026-09-14",
+                    "取得地點": "台北研討會",
+                    "備註": "主要聯繫窗口"
+                }
+            ];
+
+            if (type === 'csv') {
+                const worksheet = XLSX.utils.json_to_sheet(templateData);
+                const csv = XLSX.utils.sheet_to_csv(worksheet);
+                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                downloadBlob(blob, "BusinessCard_Template.csv");
+            } else if (type === 'xlsx') {
+                const worksheet = XLSX.utils.json_to_sheet(templateData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+                XLSX.writeFile(workbook, "BusinessCard_Template.xlsx");
+            } else if (type === 'json') {
+                const blob = new Blob([JSON.stringify(templateData, null, 2)], { type: 'application/json;charset=utf-8;' });
+                downloadBlob(blob, "BusinessCard_Template.json");
+            }
+        }
+
+        function handleImportProcess() {
+            const input = document.getElementById('import-file-input');
+            const file = input.files[0];
+            if (!file) {
+                showToast("請先選擇匯入檔案！", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.json')) {
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        processImportedRows(parsed);
+                    } catch (err) {
+                        showToast("JSON 檔案解析失敗", "error");
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            } else {
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.SheetNames[0];
+                        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+                        processImportedRows(rows);
+                    } catch (err) {
+                        showToast("試算表解析失敗", "error");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processImportedRows(rows) {
+            let count = 0;
+            rows.forEach(r => {
+                const name = r["姓名"] || r["name"];
+                if (name) {
+                    const company = r["公司名稱"] || r["company"] || "";
+                    const newCard = {
+                        id: 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                        name: name,
+                        title: r["職稱"] || r["title"] || "",
+                        company: company,
+                        category: r["分類"] || r["category"] || (company ? company : "未分類"),
+                        phone: r["電話"] || r["phone"] || "",
+                        email: r["Email"] || r["email"] || "",
+                        address: r["地址"] || r["address"] || "",
+                        website: r["網站"] || r["website"] || "",
+                        acquisitionDate: r["取得日期"] || r["acquisitionDate"] || new Date().toISOString().split('T')[0],
+                        acquisitionLocation: r["取得地點"] || r["acquisitionLocation"] || "",
+                        note: r["備註"] || r["note"] || "",
+                        createdAt: new Date().toISOString()
+                    };
+                    cards.unshift(newCard);
+                    count++;
+                }
+            });
+
+            saveCardsToStorage();
+            renderCardList();
+            showToast(`成功匯入 ${count} 筆名片資料！`, "success");
+            switchTab('cards');
+        }
+
+        // Helper Utility Functions
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-800');
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${escapeHtml(message)}`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '& Mik>')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
