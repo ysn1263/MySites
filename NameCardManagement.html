@@ -1,450 +1,496 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧名片管理系統 (Gemini AI 驅動)</title>
+    <title>智慧名片管理系統 (Smart Business Card Manager)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for XLSX import/export -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 700: '#075985' } }
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#035485'
+                        }
+                    }
                 }
             }
         }
     </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SheetJS (xlsx & csv export/import) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            touch-action: manipulation;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen pb-20 md:pb-10">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col font-sans pb-20 md:pb-6">
 
-    <!-- Top Header -->
-    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-white text-xl shadow-md">
-                    <i class="fa-solid font-bold fa-address-card"></i>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
+
+    <!-- Header / Navigation Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-address-card"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">名片管理系統</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Gemini 3.6 Flash AI 驅動版</p>
+                    <h1 class="font-bold text-base md:text-lg leading-tight text-slate-900 dark:text-white">智慧名片管理系統</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Gemini AI 辨識與結構化歸檔</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <span id="card-count-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-50 text-brand-600 border border-brand-500/20">
+
+            <!-- Desktop Nav / Actions -->
+            <div class="flex items-center gap-2">
+                <span id="card-count-badge" class="px-3 py-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 text-xs font-semibold rounded-full border border-brand-100 dark:border-brand-800/50">
                     0 張名片
                 </span>
-                <button onclick="openApiKeyModal()" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-key text-amber-500"></i> API Key 設定
+                <button onclick="openApiKeyModal()" class="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-key text-amber-500"></i>
+                    <span class="hidden sm:inline">Gemini API Key</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 hidden md:block">
+            <div class="flex gap-2 pb-2">
+                <button id="tab-btn-cards" onclick="switchTab('cards')" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm">
+                    <i class="fa-solid fa-list-check"></i> 名片列表
+                </button>
+                <button id="tab-btn-add" onclick="switchTab('add')" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                    <i class="fa-solid fa-camera-retro"></i> 新增名片 / AI辨識
+                </button>
+                <button id="tab-btn-transfer" onclick="switchTab('transfer')" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                    <i class="fa-solid fa-file-import"></i> 匯入與匯出
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="max-w-6xl mx-auto px-4 py-6">
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
 
-        <!-- Navigation Tabs -->
-        <div class="flex bg-white dark:bg-slate-800 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
-            <button onclick="switchTab('cards')" id="tab-btn-cards" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm">
-                <i class="fa-solid fa-address-book"></i> 名片列表
-            </button>
-            <button onclick="switchTab('add')" id="tab-btn-add" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
-                <i class="fa-solid fa-user-plus"></i> 新增 / 辨識
-            </button>
-            <button onclick="switchTab('transfer')" id="tab-btn-transfer" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
-                <i class="fa-solid fa-file-arrow-up-file-arrow-down"></i> 匯入與匯出
-            </button>
-        </div>
-
-        <!-- VIEW 1: 名片列表與搜尋 -->
-        <section id="tab-cards" class="tab-content space-y-4">
-            <!-- Search & Filter Controls -->
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
-                        <input type="text" id="search-input" oninput="renderCardList()" placeholder="搜尋姓名、公司、職稱、備註..." class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div class="w-full sm:w-48">
-                        <select id="filter-category" onchange="renderCardList()" class="w-full py-2.5 px-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                            <option value="ALL">全部分類</option>
-                        </select>
-                    </div>
+        <!-- ================= TAB 1: 名片列表 ================= -->
+        <section id="tab-cards" class="tab-content space-y-6">
+            <!-- Filter Bar -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" oninput="renderCardList()" placeholder="搜尋姓名、公司、職稱、備註..." 
+                           class="w-full pl-10 pr-4 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:inline">分類篩選：</label>
+                    <select id="filter-category" onchange="renderCardList()" class="w-full md:w-48 py-2 px-3 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="ALL">全部分類</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Cards Grid -->
-            <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Rendered Dynamically -->
-            </div>
+            <!-- Cards Grid Container -->
+            <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
             <!-- Empty State -->
-            <div id="empty-state" class="hidden text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-                    <i class="fa-solid fa-folder-open"></i>
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
+                <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center text-3xl mb-4">
+                    <i class="fa-solid fa-box-open"></i>
                 </div>
-                <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">尚無名片資料</p>
-                <button onclick="switchTab('add')" class="mt-4 px-4 py-2 bg-brand-500 text-white text-xs rounded-xl hover:bg-brand-600 transition">
-                    <i class="fa-solid fa-plus mr-1"></i> 新增第一張名片
+                <h3 class="font-bold text-slate-700 dark:text-slate-200 text-base mb-1">查無名片資料</h3>
+                <p class="text-xs text-slate-400 max-w-sm mb-4">您可以嘗試調整關鍵字，或切換至「新增名片」頁面透過 Gemini AI 拍照辨識。</p>
+                <button onclick="switchTab('add')" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl shadow transition">
+                    立即新增名片
                 </button>
             </div>
         </section>
 
-        <!-- VIEW 2: 新增/編輯與辨識 -->
-        <section id="tab-add" class="tab-content hidden space-y-6">
-            <!-- OCR Scan Container -->
-            <div class="bg-gradient-to-r from-sky-500 to-brand-600 rounded-2xl p-6 text-white shadow-md">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div class="space-y-1 text-center md:text-left">
-                        <h2 class="text-lg font-bold flex items-center justify-center md:justify-start gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gemini AI 智慧名片辨識
-                        </h2>
-                        <p class="text-xs text-sky-100">上傳名片圖檔，Google Gemini 3.6 Flash 將自動辨識並填入名片資訊。</p>
+        <!-- ================= TAB 2: 新增名片 / AI辨識 ================= -->
+        <section id="tab-add" class="tab-content hidden space-y-6 max-w-3xl mx-auto">
+            <!-- Image Drop & OCR Upload Zone -->
+            <div id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+                 class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-2xl p-6 bg-white dark:bg-slate-800 text-center transition cursor-pointer group">
+                <input type="file" id="image-upload-input" accept="image/*" onchange="handleImageOCR(event)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                
+                <div id="drop-zone-prompt" class="space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-500 flex items-center justify-center mx-auto text-xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
-                    <div class="flex flex-wrap gap-2 justify-center">
-                        <label class="cursor-pointer px-4 py-2.5 bg-white text-brand-700 font-semibold text-xs rounded-xl shadow hover:bg-sky-50 transition active:scale-95 flex items-center gap-1.5">
-                            <i class="fa-solid fa-folder-open text-brand-500"></i> 選擇圖檔
-                            <input type="file" id="ocr-file-input" accept="image/*" onchange="handleImageOCR(event)" class="hidden">
-                        </label>
-                        <label class="cursor-pointer px-4 py-2.5 bg-sky-800/80 hover:bg-sky-800 text-white font-semibold text-xs rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
-                            <i class="fa-solid fa-camera"></i> 拍照上傳
-                            <input type="file" id="camera-file-input" accept="image/*" capture="environment" onchange="handleImageOCR(event)" class="hidden">
-                        </label>
+                    <div>
+                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">點擊上傳或將名片照片拖曳至此</p>
+                        <p class="text-xs text-slate-400 mt-1">支援 JPG, PNG, WEBP — 將自動觸發 Gemini AI 進行文字辨識</p>
                     </div>
                 </div>
 
-                <!-- Drag & Drop Zone and Image Preview -->
-                <div id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="mt-4 border-2 border-dashed border-white/40 hover:border-white rounded-xl p-4 text-center bg-white/10 transition cursor-pointer" onclick="document.getElementById('ocr-file-input').click()">
-                    <div id="drop-zone-prompt" class="space-y-1">
-                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-white/80"></i>
-                        <p class="text-xs text-white/90">點擊此處選擇照片，或將名片圖檔拖曳至此</p>
-                    </div>
-                    <div id="image-preview-container" class="hidden flex flex-col items-center gap-2">
-                        <img id="card-image-preview" src="" alt="名片預覽" class="max-h-48 rounded-lg border-2 border-white/50 shadow-md object-contain bg-black/20">
-                        <button type="button" onclick="event.stopPropagation(); removeCardImage();" class="text-xs bg-rose-500/80 hover:bg-rose-600 px-3 py-1 rounded-lg text-white font-medium flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> 移除照片
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Real-time Gemini API Status & Progress Bar -->
-                <div id="ocr-alert" class="hidden mt-4 p-3.5 bg-white/20 backdrop-blur rounded-xl text-xs space-y-2 border border-white/30 text-white">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-circle-notch fa-spin text-sm" id="ocr-spinner"></i>
-                            <span id="ocr-alert-text" class="font-medium">正在準備上傳圖像...</span>
-                        </div>
-                        <button id="skip-ocr-btn" type="button" onclick="cancelOCR()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[11px] font-semibold transition">
-                            取消辨識
-                        </button>
-                    </div>
-                    <!-- Progress Bar Container -->
-                    <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
-                        <div id="ocr-progress-bar" class="bg-amber-300 h-2 rounded-full transition-all duration-300" style="width: 5%"></div>
-                    </div>
+                <!-- Preview Area -->
+                <div id="image-preview-container" class="hidden relative max-w-xs mx-auto">
+                    <img id="card-image-preview" src="" alt="名片預覽" class="rounded-xl shadow border border-slate-200 dark:border-slate-700 max-h-48 mx-auto object-cover">
+                    <button type="button" onclick="removeCardImage()" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-rose-600 z-20">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Card Input Form -->
-            <form id="card-form" onsubmit="saveCard(event)" class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
-                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                    <h3 class="font-semibold text-base flex items-center gap-2" id="form-title">
-                        <i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位
-                    </h3>
-                    <button type="button" onclick="resetForm()" class="text-xs text-slate-400 hover:text-slate-600">重設表單</button>
+            <!-- OCR Loading Progress Bar -->
+            <div id="ocr-alert" class="hidden bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl p-4 space-y-2">
+                <div class="flex justify-between items-center text-xs text-sky-700 dark:text-sky-300 font-medium">
+                    <span id="ocr-alert-text" class="flex items-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin"></i> 正在連接 Gemini AI 辨識名片...
+                    </span>
+                    <button type="button" onclick="cancelOCR()" class="text-xs text-slate-400 hover:text-rose-500">取消</button>
                 </div>
-
-                <input type="hidden" id="field-id">
-                <input type="hidden" id="field-image">
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">姓名 <span class="text-rose-500">*</span></label>
-                        <input type="text" id="field-name" required placeholder="例如：王大明" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">職稱</label>
-                        <input type="text" id="field-title" placeholder="例如：產品總監" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">公司名稱</label>
-                        <input type="text" id="field-company" oninput="autoUpdateCategory()" placeholder="例如：科技股份有限公司" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">分類標籤</label>
-                        <input type="text" id="field-category" list="category-datalist" placeholder="選擇或自行輸入分類" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                        <datalist id="category-datalist"></datalist>
-                        <div id="quick-category-chips" class="flex flex-wrap gap-1.5 mt-2"></div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">電話 / 手機</label>
-                        <input type="tel" id="field-phone" placeholder="例如：0912-345-678" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
-                        <input type="email" id="field-email" placeholder="example@domain.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">地址</label>
-                        <input type="text" id="field-address" placeholder="例如：台北市信義區信義路五段7號" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">網站</label>
-                        <input type="url" id="field-website" placeholder="https://example.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">取得日期 <span class="text-xs text-slate-400 font-normal">(預設今天)</span></label>
-                        <input type="date" id="field-acquisition-date" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">取得地點 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
-                        <input type="text" id="field-acquisition-location" placeholder="例如：2026 台北國際電腦展" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">備註欄位 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
-                        <textarea id="field-note" rows="3" placeholder="例如：相談甚歡，對 A 專案有興趣..." class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-                    </div>
+                <div class="w-full bg-sky-200 dark:bg-sky-900 rounded-full h-2 overflow-hidden">
+                    <div id="ocr-progress-bar" class="bg-brand-500 h-2 rounded-full transition-all duration-300 w-0"></div>
                 </div>
+            </div>
 
-                <div class="pt-3">
-                    <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl shadow-md transition active:scale-[0.99] flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> 儲存名片資料
-                    </button>
-                </div>
-            </form>
+            <!-- Form Container -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                <h2 id="form-title" class="font-bold text-base mb-4 pb-3 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                    <i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位
+                </h2>
+
+                <form id="card-form" onsubmit="saveCard(event)" class="space-y-4">
+                    <input type="hidden" id="field-id">
+                    <input type="hidden" id="field-image">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">姓名 <span class="text-rose-500">*</span></label>
+                            <input type="text" id="field-name" required placeholder="例如：張小明"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">職稱</label>
+                            <input type="text" id="field-title" placeholder="例如：資深產品經理"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">公司名稱</label>
+                            <input type="text" id="field-company" oninput="autoUpdateCategory()" placeholder="例如：創新型科技股份有限公司"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">分類</label>
+                            <input type="text" id="field-category" list="category-datalist" placeholder="選擇或自由輸入分類"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <datalist id="category-datalist"></datalist>
+                            <div id="quick-category-chips" class="flex flex-wrap gap-1 mt-1.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Contact details with stricter validation -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">電話 / 手機 <span class="text-amber-500 font-normal">(電話或 Email 擇一必填)</span></label>
+                            <input type="tel" id="field-phone" placeholder="0912-345-678 或 02-23456789"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email <span class="text-amber-500 font-normal">(電話或 Email 擇一必填)</span></label>
+                            <input type="email" id="field-email" placeholder="example@domain.com"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">地址</label>
+                            <input type="text" id="field-address" placeholder="例如：台北市信義區信義路五段7號"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">網站</label>
+                            <input type="url" id="field-website" placeholder="https://example.com"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">名片取得日期</label>
+                            <input type="date" id="field-acquisition-date"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">取得地點 / 時機</label>
+                            <input type="text" id="field-acquisition-location" placeholder="例如：2026 台北國際電腦展"
+                                   class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">備註</label>
+                        <textarea id="field-note" rows="3" placeholder="談話重點、後續跟進事項..."
+                                  class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-3">
+                        <button type="submit" class="flex-1 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs md:text-sm rounded-xl shadow-sm transition">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> 儲存名片
+                        </button>
+                        <button type="button" onclick="resetForm()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium text-xs md:text-sm rounded-xl transition">
+                            清空重填
+                        </button>
+                    </div>
+                </form>
+            </div>
         </section>
 
-        <!-- VIEW 3: 資料匯入與匯出 -->
-        <section id="tab-transfer" class="tab-content hidden space-y-6">
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-                <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
-                    <i class="fa-solid fa-file-export"></i> 匯出名片資料 (多欄位排序)
+        <!-- ================= TAB 3: 匯入與匯出 ================= -->
+        <section id="tab-transfer" class="tab-content hidden space-y-6 max-w-3xl mx-auto">
+            <!-- Sort before export panel -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-down-a-z text-brand-500"></i> 匯出前排序設定
                 </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 1</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">主要排序依據</label>
                         <div class="flex gap-2">
-                            <select id="sort-field-1" class="flex-1 py-2 px-3 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <select id="sort-field-1" class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                <option value="category">分類</option>
                                 <option value="name">姓名</option>
                                 <option value="company">公司名稱</option>
-                                <option value="category" selected>分類</option>
                                 <option value="acquisitionDate">取得日期</option>
-                                <option value="createdAt">建立時間</option>
                             </select>
-                            <select id="sort-dir-1" class="w-24 py-2 px-2 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <option value="asc">遞增 (A-Z)</option>
-                                <option value="desc">遞減 (Z-A)</option>
+                            <select id="sort-dir-1" class="w-24 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                <option value="asc">升冪 (A-Z)</option>
+                                <option value="desc">降冪 (Z-A)</option>
                             </select>
                         </div>
                     </div>
-
-                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 2 (次要)</label>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">次要排序依據</label>
                         <div class="flex gap-2">
-                            <select id="sort-field-2" class="flex-1 py-2 px-3 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <option value="none">無 (不增設)</option>
+                            <select id="sort-field-2" class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
                                 <option value="name">姓名</option>
-                                <option value="company" selected>公司名稱</option>
+                                <option value="company">公司名稱</option>
                                 <option value="category">分類</option>
                                 <option value="acquisitionDate">取得日期</option>
-                                <option value="createdAt">建立時間</option>
                             </select>
-                            <select id="sort-dir-2" class="w-24 py-2 px-2 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <option value="asc">遞增 (A-Z)</option>
-                                <option value="desc">遞減 (Z-A)</option>
+                            <select id="sort-dir-2" class="w-24 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                <option value="asc">升冪 (A-Z)</option>
+                                <option value="desc">降冪 (Z-A)</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-3 pt-2">
-                    <button onclick="exportData('csv')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-csv"></i> 匯出 CSV (UTF-8)
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex flex-wrap gap-2">
+                    <button onclick="exportData('csv')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i> 匯出 CSV
                     </button>
-                    <button onclick="exportData('xlsx')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-excel"></i> 匯出 XLSX
+                    <button onclick="exportData('xlsx')" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i> 匯出 Excel (.xlsx)
                     </button>
-                    <button onclick="exportData('json')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <button onclick="exportData('json')" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
                         <i class="fa-solid fa-file-code"></i> 匯出 JSON
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
-                <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
-                    <i class="fa-solid fa-file-import"></i> 批次資料匯入與範本下載
+            <!-- Import Data Block -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-file-arrow-up text-brand-500"></i> 批次匯入名片資料
                 </h3>
-
-                <div>
-                    <p class="text-xs text-slate-500 mb-3">請先下載下方標準格式範本 (包含示範範例，全部採用 UTF-8 編碼)：</p>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="downloadTemplate('csv')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-download text-emerald-500"></i> 下載 CSV 範本
-                        </button>
-                        <button onclick="downloadTemplate('xlsx')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-download text-green-500"></i> 下載 XLSX 範本
-                        </button>
-                        <button onclick="downloadTemplate('json')" class="py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-download text-amber-500"></i> 下載 JSON 範本
-                        </button>
-                    </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">您可以下載標準範本填寫後上傳，或直接匯入先前匯出的 CSV / XLSX / JSON 檔案。</p>
+                
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="downloadTemplate('csv')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg hover:bg-slate-200">
+                        <i class="fa-solid fa-download mr-1"></i> 下載 CSV 範本
+                    </button>
+                    <button onclick="downloadTemplate('xlsx')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg hover:bg-slate-200">
+                        <i class="fa-solid fa-download mr-1"></i> 下載 Excel 範本
+                    </button>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">選擇匯入檔案 (.csv, .xlsx, .json)</label>
-                    <input type="file" id="import-file-input" accept=".csv, .xlsx, .json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer">
-                    <button onclick="handleImportProcess()" class="mt-3 w-full py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-upload"></i> 解析並匯入資料
+                <div class="flex flex-col sm:flex-row gap-3 items-center pt-2">
+                    <input type="file" id="import-file-input" accept=".csv, .xlsx, .xls, .json"
+                           class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                    <button onclick="handleImportProcess()" class="w-full sm:w-auto px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs rounded-xl shadow-sm whitespace-nowrap">
+                        開始匯入
                     </button>
                 </div>
             </div>
 
-            <div class="bg-rose-50/60 dark:bg-rose-950/20 p-6 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-sm space-y-3">
-                <h3 class="font-semibold text-base flex items-center gap-2 text-rose-600 dark:text-rose-400">
-                    <i class="fa-solid fa-triangle-exclamation"></i> 危險區域
+            <!-- Dangerous Zone -->
+            <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-6 space-y-3">
+                <h3 class="font-bold text-sm text-rose-700 dark:text-rose-400 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 資料管理危險區
                 </h3>
-                <p class="text-xs text-slate-600 dark:text-slate-400">
-                    清空本地資料庫儲存的所有名片資料。此動作無法還原，建議刪除前先匯出檔案備份。
-                </p>
-                <button onclick="openDeleteAllModal()" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition shadow flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-trash-can"></i> 刪除全部名片資料
+                <p class="text-xs text-rose-600 dark:text-rose-300">此動作將不可逆地清除目前本機瀏覽器內儲存的所有名片資料。</p>
+                <button onclick="openDeleteAllModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs rounded-xl transition">
+                    清空所有名片資料
                 </button>
             </div>
         </section>
 
     </main>
 
-    <!-- Mobile Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-2 flex justify-around items-center md:hidden z-40">
-        <button onclick="switchTab('cards')" id="mob-btn-cards" class="flex flex-col items-center gap-1 text-brand-500">
-            <i class="fa-solid fa-address-book text-lg"></i>
-            <span class="text-[10px] font-medium">名片列表</span>
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-40 px-4 py-2 flex justify-around text-[10px] font-medium">
+        <button id="mob-btn-cards" onclick="switchTab('cards')" class="flex flex-col items-center gap-1 text-brand-500">
+            <i class="fa-solid fa-list-check text-base"></i>
+            <span>名片列表</span>
         </button>
-        <button onclick="switchTab('add')" id="mob-btn-add" class="flex flex-col items-center gap-1 text-slate-400">
-            <i class="fa-solid fa-circle-plus text-xl"></i>
-            <span class="text-[10px] font-medium">新增/辨識</span>
+        <button id="mob-btn-add" onclick="switchTab('add')" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-camera-retro text-base"></i>
+            <span>新增名片</span>
         </button>
-        <button onclick="switchTab('transfer')" id="mob-btn-transfer" class="flex flex-col items-center gap-1 text-slate-400">
-            <i class="fa-solid fa-file-import text-lg"></i>
-            <span class="text-[10px] font-medium">匯入匯出</span>
+        <button id="mob-btn-transfer" onclick="switchTab('transfer')" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-file-import text-base"></i>
+            <span>匯入匯出</span>
         </button>
     </nav>
 
-    <!-- Toast Notifications -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- Gemini API Key Setting Modal -->
-    <div id="api-key-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                <h3 class="text-base font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-key text-amber-500"></i> 設定 Google Gemini API Key
-                </h3>
-                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                系統採用 <code class="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-brand-600 dark:text-brand-400 font-mono">models/gemini-3.6-flash</code> 進行高精準度名片 OCR 辨識。金鑰僅儲存於您本地瀏覽器 (localStorage)。
-            </p>
-
-            <div class="space-y-2">
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">API Key</label>
-                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono">
-            </div>
-
-            <!-- API Test Status Box -->
-            <div id="api-key-status" class="hidden p-3 rounded-xl text-xs flex items-center gap-2 border"></div>
-
-            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                <button onclick="closeApiKeyModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition">
-                    取消
-                </button>
-                <button onclick="testApiKey()" id="btn-test-key" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-vial"></i> 測試連線
-                </button>
-                <button onclick="saveApiKey()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-floppy-disk"></i> 儲存
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Details Modal -->
-    <div id="details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-3">
+    <!-- Detail View Modal -->
+    <div id="details-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-start mb-3 pb-3 border-b border-slate-100 dark:border-slate-700">
                 <div>
-                    <h3 id="modal-name" class="text-xl font-bold">--</h3>
-                    <p id="modal-title-company" class="text-xs text-slate-500">--</p>
+                    <h3 id="modal-name" class="font-bold text-lg text-slate-900 dark:text-white"></h3>
+                    <p id="modal-title-company" class="text-xs text-brand-600 dark:text-brand-400 font-medium"></p>
                 </div>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <div id="modal-body" class="space-y-3 text-sm"></div>
+            <div id="modal-body" class="flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
 
-            <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-700 pt-3">
+            <div class="pt-4 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
                 <button id="modal-edit-btn" class="px-4 py-2 bg-brand-500 text-white text-xs font-semibold rounded-xl hover:bg-brand-600">
-                    <i class="fa-solid fa-pen"></i> 編輯
+                    <i class="fa-solid fa-pen mr-1"></i> 編輯
                 </button>
                 <button id="modal-delete-btn" class="px-4 py-2 bg-rose-500 text-white text-xs font-semibold rounded-xl hover:bg-rose-600">
-                    <i class="fa-solid fa-trash"></i> 刪除
+                    <i class="fa-solid fa-trash mr-1"></i> 刪除
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini API Key Modal -->
+    <div id="api-key-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-500"></i> 設定 Gemini API Key
+                </h3>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                本系統使用 Google <strong class="text-slate-700 dark:text-slate-200">Gemini 3.6 Flash</strong> 模型進行高精準度名片 OCR。金鑰僅儲存於您本地瀏覽器中。
+            </p>
+            <div>
+                <input type="password" id="api-key-input" placeholder="貼上 AIzaSy..." 
+                       class="w-full px-3 py-2 text-xs md:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <div id="api-key-status" class="hidden p-3 rounded-xl border text-xs flex items-center gap-2"></div>
+
+            <div class="flex justify-between items-center pt-2">
+                <button type="button" id="btn-test-key" onclick="testApiKey()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1">
+                    <i class="fa-solid fa-vial"></i> 測試連線
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="closeApiKeyModal()" class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-xl">取消</button>
+                    <button onclick="saveApiKey()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl">儲存 Key</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Delete All Modal -->
-    <div id="delete-all-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-            <div class="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-                <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center text-lg font-bold">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">確定要刪除全部名片？</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">此動作將不可逆，所有資料將被永久清除。</p>
-                </div>
+    <div id="delete-all-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4 text-center">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-
-            <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-                <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 text-sm"></i>
-                <div>
-                    <span class="font-semibold">刪除前提醒：</span>
-                    建議您先前往「匯出名片資料」下載 CSV、XLSX 或 JSON 檔進行備份，以免重要資料遺失。
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeDeleteAllModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">
-                    取消
-                </button>
-                <button onclick="deleteAllCards()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow transition">
-                    <i class="fa-solid fa-trash-can mr-1"></i> 確定清除全部資料
-                </button>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">確定清空所有名片？</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">此動作無法復原，請確保您已完成資料備份。</p>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeDeleteAllModal()" class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl">取消</button>
+                <button onclick="deleteAllCards()" class="flex-1 py-2 bg-rose-600 text-white text-xs font-semibold rounded-xl hover:bg-rose-700">確定刪除</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- ========================================== -->
+    <!-- JavaScript Application Logic               -->
+    <!-- ========================================== -->
     <script>
         // ==========================================
-        // 全域變數與 API 設定
+        // 1. 跨瀏覽器相容性 LocalStorage 容錯機制
+        // ==========================================
+        const memoryStorage = {};
+
+        const safeLocalStorage = {
+            getItem(key) {
+                try {
+                    return window.localStorage ? window.localStorage.getItem(key) : memoryStorage[key] || null;
+                } catch (e) {
+                    console.warn(`[Storage Warning] 無法讀取 localStorage (${key})，改用記憶體備份`, e);
+                    return memoryStorage[key] || null;
+                }
+            },
+            setItem(key, value) {
+                try {
+                    if (window.localStorage) {
+                        window.localStorage.setItem(key, value);
+                    } else {
+                        memoryStorage[key] = value;
+                    }
+                } catch (e) {
+                    console.warn(`[Storage Warning] 無法寫入 localStorage (${key})，改用記憶體備份`, e);
+                    memoryStorage[key] = value;
+                }
+            },
+            removeItem(key) {
+                try {
+                    if (window.localStorage) {
+                        window.localStorage.removeItem(key);
+                    }
+                    delete memoryStorage[key];
+                } catch (e) {
+                    delete memoryStorage[key];
+                }
+            }
+        };
+
+        // ==========================================
+        // 2. 全域變數與系統設定
         // ==========================================
         let cards = [];
         let currentCardImageData = "";
@@ -490,17 +536,33 @@
             }
         ];
 
+        // 初始化監聽與載入
         window.addEventListener('DOMContentLoaded', () => {
             loadCards();
             setDefaultDate();
             initApiKeyInput();
+            bindValidationResetEvents();
         });
 
+        // 清除電話/Email驗證錯誤狀態
+        function bindValidationResetEvents() {
+            const phoneInput = document.getElementById('field-phone');
+            const emailInput = document.getElementById('field-email');
+
+            const clearError = () => {
+                phoneInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500');
+                emailInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500');
+            };
+
+            if (phoneInput) phoneInput.addEventListener('input', clearError);
+            if (emailInput) emailInput.addEventListener('input', clearError);
+        }
+
         // ==========================================
-        // 1. API Key Modal & Management Module
+        // 3. API Key 管理模組
         // ==========================================
         function initApiKeyInput() {
-            const savedKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
+            const savedKey = safeLocalStorage.getItem(API_KEY_STORAGE_KEY) || '';
             const input = document.getElementById('api-key-input');
             if (input) input.value = savedKey;
         }
@@ -521,7 +583,7 @@
                 showApiKeyStatus('請輸入有效的 API Key', 'error');
                 return;
             }
-            localStorage.setItem(API_KEY_STORAGE_KEY, key);
+            safeLocalStorage.setItem(API_KEY_STORAGE_KEY, key);
             showToast("Gemini API Key 已儲存！", "success");
             closeApiKeyModal();
         }
@@ -581,7 +643,7 @@
         }
 
         // ==========================================
-        // 2. Gemini API 名片 OCR 重構模組
+        // 4. Gemini API 名片 OCR 模組
         // ==========================================
         function handleImageOCR(event) {
             const file = event.target.files && event.target.files[0];
@@ -597,7 +659,7 @@
                 return;
             }
 
-            const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+            const apiKey = safeLocalStorage.getItem(API_KEY_STORAGE_KEY);
             if (!apiKey) {
                 showToast("請先設定 Gemini API Key 再進行 AI 辨識！", "info");
                 openApiKeyModal();
@@ -610,14 +672,12 @@
                 currentCardImageData = dataUrl;
                 document.getElementById('field-image').value = dataUrl;
 
-                // 顯示預覽圖
                 document.getElementById('drop-zone-prompt').classList.add('hidden');
                 const previewContainer = document.getElementById('image-preview-container');
                 const previewImg = document.getElementById('card-image-preview');
                 previewImg.src = dataUrl;
                 previewContainer.classList.remove('hidden');
 
-                // 開始呼叫 Gemini AI 辨識
                 performGeminiOCR(dataUrl, apiKey);
             };
             reader.readAsDataURL(file);
@@ -632,7 +692,6 @@
             abortController = new AbortController();
 
             try {
-                // 解析 MimeType 與純 Base64 字串
                 const mimeTypeMatch = base64DataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,/);
                 const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
                 const base64Data = base64DataUrl.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
@@ -691,7 +750,6 @@
                     throw new Error("API 未傳回可辨識的內容");
                 }
 
-                // 清除可能殘留的 codeblock 包裹符號
                 const cleanJsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
                 const extractedData = JSON.parse(cleanJsonStr);
 
@@ -766,7 +824,7 @@
         }
 
         // ==========================================
-        // 3. 通用系統邏輯 (卡片 CRUD, 匯入匯出)
+        // 5. 資料狀態寫入與 UI 即時同步機制
         // ==========================================
         function setDefaultDate() {
             const today = new Date().toISOString().split('T')[0];
@@ -774,7 +832,7 @@
         }
 
         function loadCards() {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            const stored = safeLocalStorage.getItem(STORAGE_KEY);
             if (stored) {
                 try {
                     cards = JSON.parse(stored);
@@ -785,36 +843,41 @@
                 cards = sampleCards;
                 saveCardsToStorage();
             }
+            renderCardList();
+        }
+
+        function saveCardsToStorage() {
+            safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
             updateBadge();
             updateCategoryFilterOptions();
             renderCardList();
         }
 
-        function saveCardsToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-            updateBadge();
-            updateCategoryFilterOptions();
-        }
-
         function updateBadge() {
-            document.getElementById('card-count-badge').textContent = `${cards.length} 張名片`;
+            const badge = document.getElementById('card-count-badge');
+            if (badge) badge.textContent = `${cards.length} 張名片`;
         }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.remove('hidden');
 
             ['cards', 'add', 'transfer'].forEach(t => {
                 const btn = document.getElementById(`tab-btn-${t}`);
                 const mobBtn = document.getElementById(`mob-btn-${t}`);
                 if (t === tabId) {
-                    btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm';
+                    if (btn) btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm';
                     if (mobBtn) mobBtn.className = 'flex flex-col items-center gap-1 text-brand-500';
                 } else {
-                    btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50';
+                    if (btn) btn.className = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50';
                     if (mobBtn) mobBtn.className = 'flex flex-col items-center gap-1 text-slate-400';
                 }
             });
+
+            if (tabId === 'cards') {
+                renderCardList();
+            }
         }
 
         function getAllCategories() {
@@ -867,15 +930,9 @@
                 return existing.category;
             }
 
-            if (/協會|學會|公會|基金會|社團|理事會|聯誼會|工會/i.test(cleanComp)) {
-                return '社團/協會';
-            }
-            if (/政府|局|署|院|處|市府|縣府|學校|大學|研究院|公所/i.test(cleanComp)) {
-                return '政府/公家機關';
-            }
-            if (/供應|製造|原廠|代理|物流|運輸|批發|包裝/i.test(cleanComp)) {
-                return '廠商/供應商';
-            }
+            if (/協會|學會|公會|基金會|社團|理事會|聯誼會|工會/i.test(cleanComp)) return '社團/協會';
+            if (/政府|局|署|院|處|市府|縣府|學校|大學|研究院|公所/i.test(cleanComp)) return '政府/公家機關';
+            if (/供應|製造|原廠|代理|物流|運輸|批發|包裝/i.test(cleanComp)) return '廠商/供應商';
 
             return '客戶';
         }
@@ -891,8 +948,13 @@
         function renderCardList() {
             const grid = document.getElementById('cards-grid');
             const empty = document.getElementById('empty-state');
-            const search = document.getElementById('search-input').value.toLowerCase().trim();
-            const filterCat = document.getElementById('filter-category').value;
+            if (!grid || !empty) return;
+
+            const searchInput = document.getElementById('search-input');
+            const filterCatInput = document.getElementById('filter-category');
+
+            const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const filterCat = filterCatInput ? filterCatInput.value : 'ALL';
 
             const filtered = cards.filter(card => {
                 const matchesSearch = 
@@ -933,8 +995,8 @@
                         <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-3">${escapeHtml(card.company || '未提供公司')}</p>
 
                         <div class="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-                            ${card.phone ? `<div class="flex items-center gap-2"><i class="fa-solid fa-phone text-slate-400 w-3.5"></i> <a href="tel:${card.phone}" class="hover:text-brand-500">${escapeHtml(card.phone)}</a></div>` : ''}
-                            ${card.email ? `<div class="flex items-center gap-2"><i class="fa-solid fa-envelope text-slate-400 w-3.5"></i> <a href="mailto:${card.email}" class="hover:text-brand-500 truncate">${escapeHtml(card.email)}</a></div>` : ''}
+                            ${card.phone ? `<div class="flex items-center gap-2"><i class="fa-solid fa-phone text-slate-400 w-3.5"></i> <a href="tel:${escapeHtml(card.phone)}" class="hover:text-brand-500">${escapeHtml(card.phone)}</a></div>` : ''}
+                            ${card.email ? `<div class="flex items-center gap-2"><i class="fa-solid fa-envelope text-slate-400 w-3.5"></i> <a href="mailto:${escapeHtml(card.email)}" class="hover:text-brand-500 truncate">${escapeHtml(card.email)}</a></div>` : ''}
                             ${card.acquisitionDate ? `<div class="flex items-center gap-2"><i class="fa-solid fa-calendar-day text-slate-400 w-3.5"></i> 取得日期: ${escapeHtml(card.acquisitionDate)}</div>` : ''}
                         </div>
                     </div>
@@ -956,30 +1018,25 @@
             `).join('');
         }
 
-        // Drag and Drop
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('drop-zone').classList.add('bg-white/20', 'border-white');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('drop-zone').classList.remove('bg-white/20', 'border-white');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('drop-zone').classList.remove('bg-white/20', 'border-white');
-            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-                processImageFile(e.dataTransfer.files[0]);
-            }
-        }
-
+        // ==========================================
+        // 6. 表單提交與二選一嚴格驗證
+        // ==========================================
         function saveCard(event) {
             event.preventDefault();
+
+            const phoneInput = document.getElementById('field-phone');
+            const emailInput = document.getElementById('field-email');
+            const phoneVal = phoneInput.value.trim();
+            const emailVal = emailInput.value.trim();
+
+            // 核心驗證邏輯：電話或 Email 至少填寫一項
+            if (!phoneVal && !emailVal) {
+                showToast("請至少填寫『電話/手機』或『Email』其中一項！", "error");
+                phoneInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-500');
+                emailInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-500');
+                phoneInput.focus();
+                return false;
+            }
 
             const id = document.getElementById('field-id').value;
             const companyName = document.getElementById('field-company').value.trim();
@@ -991,8 +1048,8 @@
                 title: document.getElementById('field-title').value.trim(),
                 company: companyName,
                 category: categoryInput || (companyName ? companyName : '未分類'),
-                phone: document.getElementById('field-phone').value.trim(),
-                email: document.getElementById('field-email').value.trim(),
+                phone: phoneVal,
+                email: emailVal,
                 address: document.getElementById('field-address').value.trim(),
                 website: document.getElementById('field-website').value.trim(),
                 acquisitionDate: document.getElementById('field-acquisition-date').value || new Date().toISOString().split('T')[0],
@@ -1011,6 +1068,7 @@
                 showToast("成功新增名片！", "success");
             }
 
+            // 儲存狀態並刷新UI
             saveCardsToStorage();
             resetForm();
             switchTab('cards');
@@ -1018,7 +1076,14 @@
 
         function resetForm() {
             cancelOCR();
-            document.getElementById('card-form').reset();
+            const form = document.getElementById('card-form');
+            if (form) form.reset();
+
+            const phoneInput = document.getElementById('field-phone');
+            const emailInput = document.getElementById('field-email');
+            if (phoneInput) phoneInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500');
+            if (emailInput) emailInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500');
+
             document.getElementById('field-id').value = '';
             document.getElementById('field-image').value = '';
             document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位';
@@ -1098,7 +1163,6 @@
             if (confirm("確定要刪除此張名片資料嗎？")) {
                 cards = cards.filter(c => c.id !== id);
                 saveCardsToStorage();
-                renderCardList();
                 closeModal();
                 showToast("名片已刪除", "info");
             }
@@ -1115,11 +1179,13 @@
         function deleteAllCards() {
             cards = [];
             saveCardsToStorage();
-            renderCardList();
             closeDeleteAllModal();
             showToast("已成功清空所有名片資料！", "info");
         }
 
+        // ==========================================
+        // 7. 匯入與匯出模組
+        // ==========================================
         function getSortedCards() {
             const f1 = document.getElementById('sort-field-1').value;
             const d1 = document.getElementById('sort-dir-1').value;
@@ -1224,7 +1290,7 @@
 
         function handleImportProcess() {
             const input = document.getElementById('import-file-input');
-            const file = input.files[0];
+            const file = input ? input.files[0] : null;
             if (!file) {
                 showToast("請先選擇匯入檔案！", "error");
                 return;
@@ -1286,11 +1352,33 @@
             });
 
             saveCardsToStorage();
-            renderCardList();
             showToast(`成功匯入 ${count} 筆名片資料！`, "success");
             switchTab('cards');
         }
 
+        // Drag & Drop
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('drop-zone').classList.add('bg-white/20', 'border-white');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('drop-zone').classList.remove('bg-white/20', 'border-white');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('drop-zone').classList.remove('bg-white/20', 'border-white');
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                processImageFile(e.dataTransfer.files[0]);
+            }
+        }
+
+        // Helper Utilities
         function downloadBlob(blob, filename) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1304,6 +1392,7 @@
 
         function showToast(message, type = "info") {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
 
             const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-800');
