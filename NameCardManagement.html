@@ -50,7 +50,7 @@
     <!-- Main Content Container -->
     <main class="max-w-6xl mx-auto px-4 py-6">
 
-        <!-- Desktop Tab Buttons / Mobile Top Switcher -->
+        <!-- Navigation Tabs -->
         <div class="flex bg-white dark:bg-slate-800 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
             <button onclick="switchTab('cards')" id="tab-btn-cards" class="flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-brand-500 text-white shadow-sm">
                 <i class="fa-solid fa-address-book"></i> 名片列表
@@ -106,7 +106,7 @@
                         <h2 class="text-lg font-bold flex items-center justify-center md:justify-start gap-2">
                             <i class="fa-solid fa-camera"></i> 影像辨識與名片拍照上傳
                         </h2>
-                        <p class="text-xs text-sky-100">支援相機拍攝、檔案上傳與拖曳預覽，將自動擷取名片內容帶入欄位。</p>
+                        <p class="text-xs text-sky-100">上傳名片圖檔，系統將透過快速光學辨識 (OCR) 協助填入欄位。</p>
                     </div>
                     <div class="flex flex-wrap gap-2 justify-center">
                         <label class="cursor-pointer px-4 py-2.5 bg-white text-brand-700 font-semibold text-xs rounded-xl shadow hover:bg-sky-50 transition active:scale-95 flex items-center gap-1.5">
@@ -124,7 +124,7 @@
                 <div id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="mt-4 border-2 border-dashed border-white/40 hover:border-white rounded-xl p-4 text-center bg-white/10 transition cursor-pointer" onclick="document.getElementById('ocr-file-input').click()">
                     <div id="drop-zone-prompt" class="space-y-1">
                         <i class="fa-solid fa-cloud-arrow-up text-2xl text-white/80"></i>
-                        <p class="text-xs text-white/90">點擊此處選擇照片或將名片圖檔拖曳至此</p>
+                        <p class="text-xs text-white/90">點擊此處選擇照片，或將名片圖檔拖曳至此</p>
                     </div>
                     <div id="image-preview-container" class="hidden flex flex-col items-center gap-2">
                         <img id="card-image-preview" src="" alt="名片預覽" class="max-h-48 rounded-lg border-2 border-white/50 shadow-md object-contain bg-black/20">
@@ -134,10 +134,21 @@
                     </div>
                 </div>
 
-                <!-- OCR Status Alert -->
-                <div id="ocr-alert" class="hidden mt-4 p-3 bg-white/20 backdrop-blur rounded-xl text-xs flex items-center gap-2 text-white border border-white/30">
-                    <i class="fa-solid fa-circle-notch fa-spin text-sm" id="ocr-spinner"></i>
-                    <span id="ocr-alert-text">正在辨識圖片資訊...</span>
+                <!-- Improved Real-time OCR Status & Progress Bar -->
+                <div id="ocr-alert" class="hidden mt-4 p-3.5 bg-white/20 backdrop-blur rounded-xl text-xs space-y-2 border border-white/30 text-white">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-notch fa-spin text-sm" id="ocr-spinner"></i>
+                            <span id="ocr-alert-text" class="font-medium">正在處理名片影像...</span>
+                        </div>
+                        <button id="skip-ocr-btn" type="button" onclick="cancelOCR()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[11px] font-semibold transition">
+                            跳過辨識，直接填寫
+                        </button>
+                    </div>
+                    <!-- Progress Bar Container -->
+                    <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                        <div id="ocr-progress-bar" class="bg-amber-300 h-2 rounded-full transition-all duration-300" style="width: 5%"></div>
+                    </div>
                 </div>
             </div>
 
@@ -152,8 +163,25 @@
 
                 <input type="hidden" id="field-id">
                 <input type="hidden" id="field-image">
-                            <!-- Populated dynamically -->
-                        </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">姓名 <span class="text-rose-500">*</span></label>
+                        <input type="text" id="field-name" required placeholder="例如：王大明" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">職稱</label>
+                        <input type="text" id="field-title" placeholder="例如：產品總監" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">公司名稱</label>
+                        <input type="text" id="field-company" oninput="autoUpdateCategory()" placeholder="例如：科技股份有限公司" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">分類標籤</label>
+                        <input type="text" id="field-category" list="category-datalist" placeholder="選擇或自行輸入分類" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <datalist id="category-datalist"></datalist>
+                        <div id="quick-category-chips" class="flex flex-wrap gap-1.5 mt-2"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">電話 / 手機</label>
@@ -172,21 +200,18 @@
                         <input type="url" id="field-website" placeholder="https://example.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
 
-                    <!-- 設置 1: 取得日期 (原生 DatePicker) -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">1. 取得日期 <span class="text-xs text-slate-400 font-normal">(非必填，預設今天)</span></label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">取得日期 <span class="text-xs text-slate-400 font-normal">(非必填，預設今天)</span></label>
                         <input type="date" id="field-acquisition-date" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
 
-                    <!-- 設置 2: 取得地點 -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">2. 取得地點 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">取得地點 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
                         <input type="text" id="field-acquisition-location" placeholder="例如：2026 台北國際電腦展" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
 
-                    <!-- 設置 3: 備註欄位 -->
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">3. 備註欄位 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">備註欄位 <span class="text-xs text-slate-400 font-normal">(非必填)</span></label>
                         <textarea id="field-note" rows="3" placeholder="例如：相談甚歡，對 A 專案有興趣..." class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
                     </div>
                 </div>
@@ -201,14 +226,12 @@
 
         <!-- VIEW 3: 資料匯入與匯出 -->
         <section id="tab-transfer" class="tab-content hidden space-y-6">
-            <!-- 匯出專區 (支援最多2個欄位排序) -->
             <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                 <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
                     <i class="fa-solid fa-file-export"></i> 匯出名片資料 (多欄位排序)
                 </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- 排序 1 -->
                     <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 1</label>
                         <div class="flex gap-2">
@@ -226,7 +249,6 @@
                         </div>
                     </div>
 
-                    <!-- 排序 2 -->
                     <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700">
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">排序欄位 2 (次要)</label>
                         <div class="flex gap-2">
@@ -246,7 +268,6 @@
                     </div>
                 </div>
 
-                <!-- Export Action Buttons -->
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button onclick="exportData('csv')" class="flex-1 min-w-[120px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-file-csv"></i> 匯出 CSV (UTF-8)
@@ -260,13 +281,11 @@
                 </div>
             </div>
 
-            <!-- 下載範本與批次匯入 -->
             <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
                 <h3 class="font-semibold text-base flex items-center gap-2 text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-700 pb-3">
                     <i class="fa-solid fa-file-import"></i> 批次資料匯入與範本下載
                 </h3>
 
-                <!-- 範本下載 -->
                 <div>
                     <p class="text-xs text-slate-500 mb-3">請先下載下方標準格式範本 (包含示範範例，全部採用 UTF-8 編碼)：</p>
                     <div class="flex flex-wrap gap-2">
@@ -282,7 +301,6 @@
                     </div>
                 </div>
 
-                <!-- 檔案上傳匯入 -->
                 <div class="pt-2">
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">選擇匯入檔案 (.csv, .xlsx, .json)</label>
                     <input type="file" id="import-file-input" accept=".csv, .xlsx, .json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer">
@@ -292,7 +310,6 @@
                 </div>
             </div>
 
-            <!-- 危險區域：清空全部資料 -->
             <div class="bg-rose-50/60 dark:bg-rose-950/20 p-6 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-sm space-y-3">
                 <h3 class="font-semibold text-base flex items-center gap-2 text-rose-600 dark:text-rose-400">
                     <i class="fa-solid fa-triangle-exclamation"></i> 危險區域
@@ -308,7 +325,7 @@
 
     </main>
 
-    <!-- Mobile Fixed Bottom Navigation Bar -->
+    <!-- Mobile Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-2 flex justify-around items-center md:hidden z-40">
         <button onclick="switchTab('cards')" id="mob-btn-cards" class="flex flex-col items-center gap-1 text-brand-500">
             <i class="fa-solid fa-address-book text-lg"></i>
@@ -324,10 +341,10 @@
         </button>
     </nav>
 
-    <!-- Toast Notification Container -->
+    <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Details/Edit Modal -->
+    <!-- Modals -->
     <div id="details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -340,9 +357,7 @@
                 </button>
             </div>
 
-            <div id="modal-body" class="space-y-3 text-sm">
-                <!-- Injected via JS -->
-            </div>
+            <div id="modal-body" class="space-y-3 text-sm"></div>
 
             <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-700 pt-3">
                 <button id="modal-edit-btn" class="px-4 py-2 bg-brand-500 text-white text-xs font-semibold rounded-xl hover:bg-brand-600">
@@ -355,7 +370,7 @@
         </div>
     </div>
 
-    <!-- Delete All Confirmation Modal -->
+    <!-- Delete All Modal -->
     <div id="delete-all-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
             <div class="flex items-center gap-3 text-rose-600 dark:text-rose-400">
@@ -387,16 +402,16 @@
         </div>
     </div>
 
+    <!-- JavaScript Logic -->
     <script>
-        // Data State
         let cards = [];
         let currentCardImageData = "";
+        let activeOcrWorker = null;
+        let isOcrCancelled = false;
         const STORAGE_KEY = 'business_cards_app_data';
 
-        // Built-in Common Categories
         const DEFAULT_CATEGORIES = ['客戶', '廠商/供應商', '合作夥伴', '同業/競業', '社團/協會', '政府/公家機關', '其他'];
 
-        // Sample Data for Fresh Users
         const sampleCards = [
             {
                 id: 'card-1',
@@ -471,7 +486,6 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
 
-            // Reset Desktop Tab Styles
             ['cards', 'add', 'transfer'].forEach(t => {
                 const btn = document.getElementById(`tab-btn-${t}`);
                 const mobBtn = document.getElementById(`mob-btn-${t}`);
@@ -506,13 +520,11 @@
                 select.value = currentVal;
             }
 
-            // Update datalist for text input suggestions
             const datalist = document.getElementById('category-datalist');
             if (datalist) {
                 datalist.innerHTML = allCategories.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
             }
 
-            // Update quick chips below category input
             const chipsContainer = document.getElementById('quick-category-chips');
             if (chipsContainer) {
                 chipsContainer.innerHTML = DEFAULT_CATEGORIES.map(cat => `
@@ -527,19 +539,16 @@
             document.getElementById('field-category').value = cat;
         }
 
-        // Smart Category Prediction based on Company Name
         function predictCategoryByCompany(company) {
             if (!company) return '客戶';
             const cleanComp = company.trim();
             if (!cleanComp) return '客戶';
 
-            // 1. Check history: If we already have cards from this company, inherit its existing category
             const existing = cards.find(c => c.company && c.company.trim().toLowerCase() === cleanComp.toLowerCase());
             if (existing && existing.category) {
                 return existing.category;
             }
 
-            // 2. Keyword matching for common organization types
             if (/協會|學會|公會|基金會|社團|理事會|聯誼會|工會/i.test(cleanComp)) {
                 return '社團/協會';
             }
@@ -550,7 +559,6 @@
                 return '廠商/供應商';
             }
 
-            // 3. Default smart category recommendation
             return '客戶';
         }
 
@@ -630,6 +638,7 @@
             `).join('');
         }
 
+        // Drag and Drop Event Handlers
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -659,24 +668,23 @@
             event.target.value = '';
         }
 
+        // Streamlined Image Pre-processing for Faster OCR
         function processImageFile(file) {
             if (!file || !file.type.startsWith('image/')) {
                 showToast("請選擇有效的圖片檔案！", "error");
                 return;
             }
 
-            const alertBox = document.getElementById('ocr-alert');
-            const alertText = document.getElementById('ocr-alert-text');
-            alertBox.classList.remove('hidden');
-            alertText.textContent = "正在讀取圖片並進行影像分析與壓縮...";
+            isOcrCancelled = false;
+            updateOCRProgress("正在壓縮與強化圖片...", 10);
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // Compress image using Canvas
+                    // Optimized dimensions for ultra-fast OCR (Max 900px)
                     const canvas = document.createElement('canvas');
-                    const maxDimension = 1000;
+                    const maxDimension = 900;
                     let width = img.width;
                     let height = img.height;
 
@@ -693,19 +701,19 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
                     currentCardImageData = compressedDataUrl;
                     document.getElementById('field-image').value = compressedDataUrl;
 
-                    // Display Image Preview
+                    // Display Preview
                     document.getElementById('drop-zone-prompt').classList.add('hidden');
                     const previewContainer = document.getElementById('image-preview-container');
                     const previewImg = document.getElementById('card-image-preview');
                     previewImg.src = compressedDataUrl;
                     previewContainer.classList.remove('hidden');
 
-                    // Run OCR
-                    performOCR(compressedDataUrl);
+                    // Trigger Fast OCR
+                    performFastOCR(compressedDataUrl);
                 };
                 img.src = e.target.result;
             };
@@ -713,6 +721,7 @@
         }
 
         function removeCardImage() {
+            cancelOCR();
             currentCardImageData = "";
             document.getElementById('field-image').value = "";
             document.getElementById('card-image-preview').src = "";
@@ -720,44 +729,93 @@
             document.getElementById('drop-zone-prompt').classList.remove('hidden');
         }
 
-        async function performOCR(imageDataUrl) {
+        function updateOCRProgress(text, percent) {
+            const alertBox = document.getElementById('ocr-alert');
             const alertText = document.getElementById('ocr-alert-text');
-            alertText.textContent = "正在進行文字分析辨識 (OCR)...";
+            const progressBar = document.getElementById('ocr-progress-bar');
+            
+            alertBox.classList.remove('hidden');
+            if (alertText) alertText.textContent = text;
+            if (progressBar) progressBar.style.width = `${percent}%`;
+        }
+
+        function cancelOCR() {
+            isOcrCancelled = true;
+            if (activeOcrWorker) {
+                try { activeOcrWorker.terminate(); } catch (e) {}
+                activeOcrWorker = null;
+            }
+            document.getElementById('ocr-alert').classList.add('hidden');
+            showToast("已停止 OCR 辨識，您可以手動填寫資料", "info");
+        }
+
+        // Optimized Fast Client-side OCR with Real-time Progress & 15s Timeout
+        async function performFastOCR(imageDataUrl) {
+            updateOCRProgress("正在載入文字辨識模型...", 20);
+
+            let isFinished = false;
+
+            // 15 Seconds strict timeout fallback to avoid stalling
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    if (!isFinished) {
+                        reject(new Error("OCR_TIMEOUT"));
+                    }
+                }, 15000);
+            });
+
+            const ocrPromise = (async () => {
+                if (!window.Tesseract) throw new Error("Tesseract not available");
+
+                const worker = await Tesseract.createWorker('chi_tra+eng', 1, {
+                    logger: m => {
+                        if (isOcrCancelled) return;
+                        if (m.status === 'downloading tesseract language traineddata') {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            updateOCRProgress(`下載中文模型中 (${pct}%)...`, 20 + Math.round(pct * 0.4));
+                        } else if (m.status === 'recognizing text') {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            updateOCRProgress(`文字分析中 (${pct}%)...`, 60 + Math.round(pct * 0.38));
+                        }
+                    }
+                });
+
+                activeOcrWorker = worker;
+                const ret = await worker.recognize(imageDataUrl);
+                await worker.terminate();
+                activeOcrWorker = null;
+                return ret.data.text;
+            })();
 
             try {
-                if (window.Tesseract) {
-                    const worker = await Tesseract.createWorker('chi_tra+eng');
-                    const ret = await worker.recognize(imageDataUrl);
-                    await worker.terminate();
-                    
-                    const text = ret.data.text;
+                const text = await Promise.race([ocrPromise, timeoutPromise]);
+                isFinished = true;
+
+                if (!isOcrCancelled) {
+                    updateOCRProgress("辨識完成！", 100);
                     parseOCRText(text);
-                    alertText.textContent = "辨識完成！資料已成功帶入欄位。";
-                    showToast("名片圖片上傳與 OCR 辨識成功！", "success");
-                    return;
+                    setTimeout(() => {
+                        document.getElementById('ocr-alert').classList.add('hidden');
+                    }, 1200);
+                    showToast("名片 OCR 辨識成功！", "success");
                 }
             } catch (err) {
-                console.warn("Tesseract OCR fallback triggered:", err);
-            }
+                isFinished = true;
+                if (isOcrCancelled) return;
 
-            // Fallback smart extraction
-            setTimeout(() => {
-                const mockExtracted = {
-                    name: "陳建宏",
-                    title: "技術總監",
-                    company: "智聯雲端科技",
-                    phone: "0933-888-999",
-                    email: "chen.jh@cloudtech.tw",
-                    address: "新北市板橋區縣民大道二段7號",
-                    website: "https://cloudtech.tw"
-                };
-                fillExtractedFields(mockExtracted);
-                alertText.textContent = "圖片上傳與預覽成功！資料已帶入。";
-                showToast("名片圖片上傳成功！", "success");
-            }, 600);
+                console.warn("OCR Notice:", err.message || err);
+                document.getElementById('ocr-alert').classList.add('hidden');
+
+                if (err.message === "OCR_TIMEOUT") {
+                    showToast("網路載入模型時間較長，已跳過 OCR 辨識，請手動填寫欄位", "info");
+                } else {
+                    showToast("相片上傳成功！您可以直接手動輸入欄位資訊", "success");
+                }
+            }
         }
 
         function parseOCRText(rawText) {
+            if (!rawText) return;
             const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
             let phone = "", email = "", website = "", company = "", title = "", name = "", address = "";
             
@@ -783,7 +841,7 @@
             }
 
             fillExtractedFields({
-                name: name || lines[0] || "新聯絡人",
+                name: name || lines[0] || "",
                 title: title,
                 company: company,
                 phone: phone,
@@ -846,11 +904,11 @@
         }
 
         function resetForm() {
+            cancelOCR();
             document.getElementById('card-form').reset();
             document.getElementById('field-id').value = '';
             document.getElementById('field-image').value = '';
             document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-pen-to-square text-brand-500"></i> 手動輸入 / 修改欄位';
-            document.getElementById('ocr-alert').classList.add('hidden');
             removeCardImage();
             setDefaultDate();
         }
@@ -923,6 +981,32 @@
             document.getElementById('details-modal').classList.add('hidden');
         }
 
+        function confirmDelete(id) {
+            if (confirm("確定要刪除此張名片資料嗎？")) {
+                cards = cards.filter(c => c.id !== id);
+                saveCardsToStorage();
+                renderCardList();
+                closeModal();
+                showToast("名片已刪除", "info");
+            }
+        }
+
+        function openDeleteAllModal() {
+            document.getElementById('delete-all-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteAllModal() {
+            document.getElementById('delete-all-modal').classList.add('hidden');
+        }
+
+        function deleteAllCards() {
+            cards = [];
+            saveCardsToStorage();
+            renderCardList();
+            closeDeleteAllModal();
+            showToast("已成功清空所有名片資料！", "info");
+        }
+
         function getSortedCards() {
             const f1 = document.getElementById('sort-field-1').value;
             const d1 = document.getElementById('sort-dir-1').value;
@@ -932,7 +1016,6 @@
             let sorted = [...cards];
 
             sorted.sort((a, b) => {
-                // Primary Sort
                 let valA1 = a[f1] || '';
                 let valB1 = b[f1] || '';
                 let comp1 = valA1.localeCompare(valB1, 'zh-Hant', { numeric: true });
@@ -942,7 +1025,6 @@
                     return comp1;
                 }
 
-                // Secondary Sort
                 let valA2 = a[f2] || '';
                 let valB2 = b[f2] || '';
                 let comp2 = valA2.localeCompare(valB2, 'zh-Hant', { numeric: true });
@@ -978,7 +1060,6 @@
             if (format === 'csv') {
                 const worksheet = XLSX.utils.json_to_sheet(exportRows);
                 const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                // Prepend UTF-8 BOM so Excel opens Chinese properly without encoding issues
                 const blob = new Blob(["\uFEFF" + csvOutput], { type: 'text/csv;charset=utf-8;' });
                 downloadBlob(blob, `BusinessCards_${timestamp}.csv`);
             } else if (format === 'xlsx') {
@@ -1001,7 +1082,7 @@
                     "姓名": "王大明",
                     "職稱": "行銷總監",
                     "公司名稱": "未來科技股份有限公司",
-                    "分類": "未來科技股份有限公司",
+                    "分類": "客戶",
                     "電話": "02-23456789",
                     "Email": "daming@futuretech.com",
                     "地址": "台北市信義區路一段1號",
@@ -1097,7 +1178,6 @@
             switchTab('cards');
         }
 
-        // Helper Utility Functions
         function downloadBlob(blob, filename) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1134,7 +1214,7 @@
             return String(str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
-                .replace(/>/g, '& Mik>')
+                .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
